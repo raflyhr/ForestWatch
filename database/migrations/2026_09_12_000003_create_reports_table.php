@@ -23,8 +23,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement('ALTER TABLE reports ADD COLUMN location geography(Point, 4326)');
-        DB::statement("CREATE INDEX reports_location_gist ON reports USING GIST (location)");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE reports ADD COLUMN location POINT SRID 4326 NULL');
+        }
     }
 
     public function down(): void

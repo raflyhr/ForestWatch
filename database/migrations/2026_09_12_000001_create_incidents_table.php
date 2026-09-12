@@ -24,8 +24,9 @@ return new class extends Migration
             $table->index(['latitude', 'longitude']);
         });
 
-        DB::statement('ALTER TABLE incidents ADD COLUMN location geography(Point, 4326)');
-        DB::statement("CREATE INDEX incidents_location_gist ON incidents USING GIST (location)");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE incidents ADD COLUMN location POINT SRID 4326 NULL');
+        }
     }
 
     public function down(): void

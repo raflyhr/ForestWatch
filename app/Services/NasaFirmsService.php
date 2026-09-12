@@ -3,27 +3,61 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use App\Models\IntegrationStatus;
+use App\Models\ActivityLog;
 
 class NasaFirmsService
 {
     public function fetchActiveFires(string $areaBoundingBox): array
     {
-        $response = Http::get('https://firms.modaps.eosdis.nasa.gov/api/area/csv/' .
-            config('services.nasa.api_key') . "/VIIRS_SNPP_NRT/{$areaBoundingBox}/1");
+        try {
+            $response = Http::timeout(10)->retry(2, 200)->get('https://firms.modaps.eosdis.nasa.gov/api/area/csv/' .
+                config('services.nasa.api_key') . "/VIIRS_SNPP_NRT/{$areaBoundingBox}/1");
 
-        if ($response->failed()) {
-            report(new \Exception('NASA FIRMS fetch failed: ' . $response->status()));
+            if ($response->failed()) {
+                $this->failed('NASA FIRMS fetch failed: HTTP '.$response->status());
+                return [];
+            }
+
+            $rows = $this->parseCsv($response->body());
+            IntegrationStatus::updateOrCreate(['source' => 'nasa'], [
+                'status' => 'healthy', 'last_success_at' => now(),
+                'last_error' => null, 'last_record_count' => count($rows),
+            ]);
+            return $rows;
+        } catch (\Throwable $e) {
+            $this->failed($e->getMessage());
             return [];
         }
-
-        return $this->parseCsv($response->body());
     }
 
     private function parseCsv(string $csv): array
     {
-        $lines = array_map('str_getcsv', explode("\n", trim($csv)));
+        $lines = array_values(array_filter(array_map('str_getcsv', explode("\n", trim($csv))), fn ($row) => $row !== ['']));
         $header = array_shift($lines);
         if (!$header) return [];
-        return array_map(fn ($row) => array_combine($header, $row), $lines);
+        return array_values(array_filter(array_map(function ($row) use ($header) {
+            if (count($row) !== count($header)) {
+                return null;
+            }
+
+            $item = array_combine($header, $row);
+            return is_numeric($item['latitude'] ?? null) && is_numeric($item['longitude'] ?? null)
+                && (float) $item['latitude'] >= -90 && (float) $item['latitude'] <= 90
+                && (float) $item['longitude'] >= -180 && (float) $item['longitude'] <= 180
+                ? $item : null;
+        }, $lines)));
+    }
+
+    private function failed(string $message): void
+    {
+        report(new \Exception($message));
+        $status = IntegrationStatus::updateOrCreate(['source' => 'nasa'], [
+            'status' => 'failed', 'last_failure_at' => now(), 'last_error' => $message,
+        ]);
+        ActivityLog::create([
+            'action' => 'integration.failed', 'target_type' => IntegrationStatus::class,
+            'target_id' => $status->id, 'new_values' => ['source' => 'nasa', 'error' => $message],
+        ]);
     }
 }

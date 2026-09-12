@@ -8,4 +8,9 @@ return [
         'per_report' => env('WEIGHT_PER_REPORT', 20),
         'ai_evidence' => env('WEIGHT_AI_EVIDENCE', 15),
     ],
+    'thresholds' => [
+        'medium' => env('WARNING_THRESHOLD_MEDIUM', 30),
+        'high' => env('WARNING_THRESHOLD_HIGH', 55),
+        'critical' => env('WARNING_THRESHOLD_CRITICAL', 80),
+    ],
 ];

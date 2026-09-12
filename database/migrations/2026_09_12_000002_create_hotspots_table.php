@@ -22,8 +22,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        DB::statement('ALTER TABLE hotspots ADD COLUMN location geography(Point, 4326)');
-        DB::statement("CREATE INDEX hotspots_location_gist ON hotspots USING GIST (location)");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE hotspots ADD COLUMN location POINT SRID 4326 NULL');
+        }
     }
 
     public function down(): void

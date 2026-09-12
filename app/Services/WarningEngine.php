@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Incident;
 use App\Models\Warning;
+use App\Models\SystemSetting;
 
 class WarningEngine
 {
@@ -13,13 +14,13 @@ class WarningEngine
         $reasons = [];
 
         if ($incident->hotspots()->exists()) {
-            $score += config('forestwatch.weights.nasa_hotspot', 40);
+            $score += $this->setting('warning.weights.nasa_hotspot', config('forestwatch.weights.nasa_hotspot', 40));
             $reasons[] = 'NASA hotspot terdeteksi';
         }
 
         $reportCount = $incident->reports()->where('status', '!=', 'invalid')->count();
         if ($reportCount > 0) {
-            $score += min($reportCount * config('forestwatch.weights.per_report', 20), 40);
+            $score += min($reportCount * $this->setting('warning.weights.per_report', config('forestwatch.weights.per_report', 20)), 40);
             $reasons[] = "{$reportCount} laporan masyarakat";
         }
 
@@ -27,7 +28,7 @@ class WarningEngine
             ->whereHas('aiAssessment', fn ($q) => $q->where('fire_score', '>', 0.5))
             ->exists();
         if ($aiPositive) {
-            $score += config('forestwatch.weights.ai_evidence', 15);
+            $score += $this->setting('warning.weights.ai_evidence', config('forestwatch.weights.ai_evidence', 15));
             $reasons[] = 'AI mendeteksi indikasi api/asap pada foto';
         }
 
@@ -45,19 +46,29 @@ class WarningEngine
 
     private function scoreToLevel(int $score, Incident $incident): array
     {
+        $thresholds = [
+            'medium' => $this->setting('warning.thresholds.medium', config('forestwatch.thresholds.medium', 30)),
+            'high' => $this->setting('warning.thresholds.high', config('forestwatch.thresholds.high', 55)),
+            'critical' => $this->setting('warning.thresholds.critical', config('forestwatch.thresholds.critical', 80)),
+        ];
         $level = match (true) {
-            $score >= 80 => 'critical',
-            $score >= 55 => 'high',
-            $score >= 30 => 'medium',
+            $score >= $thresholds['critical'] => 'critical',
+            $score >= $thresholds['high'] => 'high',
+            $score >= $thresholds['medium'] => 'medium',
             default      => 'low',
         };
 
         $evidenceCount = $incident->hotspots()->count()
-            + $incident->reports()->count()
+            + $incident->reports()->where('status', '!=', 'invalid')->count()
             + ($incident->weatherSnapshots()->exists() ? 1 : 0);
 
         $confidence = $evidenceCount >= 3 ? 'high' : ($evidenceCount == 2 ? 'medium' : 'low');
 
         return [$level, $confidence];
+    }
+
+    private function setting(string $key, int $fallback): int
+    {
+        return (int) (SystemSetting::where('key', $key)->value('value') ?? $fallback);
     }
 }
