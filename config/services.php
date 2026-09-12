@@ -2,6 +2,22 @@
 
 return [
 
+    'nasa' => [
+        'api_key' => env('NASA_FIRMS_API_KEY'),
+    ],
+
+    'bmkg' => [
+        'base_url' => env('BMKG_API_BASE', 'https://api.bmkg.go.id'),
+    ],
+
+    'ai' => [
+        'url' => env('AI_SERVICE_URL', 'http://localhost:8001'),
+    ],
+
+    'osm' => [
+        'base_url' => env('OSM_API_BASE', 'https://nominatim.openstreetmap.org'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

@@ -45,8 +45,9 @@ return new class extends Migration
             $table->decimal('longitude', 10, 7);
             $table->timestamps();
         });
-        DB::statement('ALTER TABLE water_sources ADD COLUMN location geography(Point, 4326)');
-        DB::statement("CREATE INDEX water_sources_location_gist ON water_sources USING GIST (location)");
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE water_sources ADD COLUMN location POINT SRID 4326 NULL');
+        }
 
         Schema::create('verifications', function (Blueprint $table) {
             $table->id();

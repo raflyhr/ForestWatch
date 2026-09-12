@@ -1,0 +1,47 @@
+{
+  "info": {
+    "name": "ForestWatch Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Local smoke tests for ForestWatch backend. Import environment example and set tokens after calling token endpoints."
+  },
+  "variable": [{ "key": "base_url", "value": "http://127.0.0.1:8000" }],
+  "item": [
+    {
+      "name": "Public",
+      "item": [
+        { "name": "List incidents", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/incidents" } },
+        { "name": "List hotspots", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/hotspots" } },
+        { "name": "List weather", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/weather" } },
+        { "name": "List water sources", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/water-sources" } },
+        { "name": "Report detail", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/reports/{{report_id}}" } }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        { "name": "Officer token", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"officer@forestwatch.test\",\n  \"password\": \"Password123!\"\n}" }, "url": "{{base_url}}/api/auth/token" } },
+        { "name": "Admin token", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@forestwatch.test\",\n  \"password\": \"Password123!\"\n}" }, "url": "{{base_url}}/api/auth/token" } }
+      ]
+    },
+    {
+      "name": "Officer",
+      "item": [
+        { "name": "Verify incident", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{officer_token}}" }], "body": { "mode": "raw", "raw": "{\n  \"result\": \"fire_confirmed\",\n  \"notes\": \"Confirmed on site.\"\n}" }, "url": "{{base_url}}/api/incidents/{{incident_id}}/verify" } },
+        { "name": "Moderate report", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{officer_token}}" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"valid\"\n}" }, "url": "{{base_url}}/api/reports/{{report_id}}/moderate" } },
+        { "name": "Create response", "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{officer_token}}" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"assigned\",\n  \"notes\": \"Team assigned.\"\n}" }, "url": "{{base_url}}/api/incidents/{{incident_id}}/response" } },
+        { "name": "Update response", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{officer_token}}" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"completed\",\n  \"notes\": \"Response completed.\"\n}" }, "url": "{{base_url}}/api/responses/{{response_id}}" } }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        { "name": "Summary", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/summary" } },
+        { "name": "List officers", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/officers" } },
+        { "name": "Create officer", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{admin_token}}" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Officer Test\",\n  \"email\": \"officer-new@forestwatch.test\",\n  \"password\": \"Password123!\"\n}" }, "url": "{{base_url}}/api/admin/officers" } },
+        { "name": "Warning settings", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/warning-settings" } },
+        { "name": "Integration status", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/integrations" } },
+        { "name": "Audit logs", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }], "url": "{{base_url}}/api/admin/audit-logs" } }
+      ]
+    }
+  ]
+}

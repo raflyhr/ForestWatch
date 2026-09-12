@@ -4,17 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Incident;
-use Illuminate\Http\Request;
+use App\Http\Resources\IncidentPublicResource;
 
 class IncidentController extends Controller
 {
     public function index()
     {
-        return Incident::with(['hotspots', 'reports', 'warnings'])->get();
+        return IncidentPublicResource::collection(
+            Incident::withCount(['reports', 'hotspots'])->latest()->paginate(25)
+        );
     }
 
     public function show(Incident $incident)
     {
-        return $incident->load(['hotspots', 'reports', 'warnings', 'verifications', 'responses']);
+        return new IncidentPublicResource($incident->loadCount(['reports', 'hotspots']));
     }
 }
