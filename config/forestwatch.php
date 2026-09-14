@@ -3,6 +3,13 @@
 return [
     'spatial_radius_meters' => env('SPATIAL_RADIUS_METERS', 1500),
     'bounding_box' => env('NASA_BOUNDING_BOX', '95,-11,141,6'), // Indonesia approx
+    'regions' => [
+        'sumatra' => '95,-6,106,6',
+        'jawa_bali' => '105,-9,116,-5',
+        'kalimantan' => '108,-5,119,5',
+        'sulawesi' => '118,-6,126,2',
+        'maluku_papua' => '124,-9,141,1',
+    ],
     'weights' => [
         'nasa_hotspot' => env('WEIGHT_NASA_HOTSPOT', 40),
         'per_report' => env('WEIGHT_PER_REPORT', 20),
