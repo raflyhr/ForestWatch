@@ -19,6 +19,7 @@ return new class extends Migration
             $table->float('frp')->nullable();
             $table->string('source')->default('NASA_FIRMS');
             $table->foreignId('incident_id')->nullable()->constrained();
+            $table->unique(['latitude', 'longitude', 'detected_at']);
             $table->timestamps();
         });
 
