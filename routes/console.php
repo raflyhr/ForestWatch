@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('forestwatch:fetch-nasa')->everyFourHours();
+Schedule::command('forestwatch:fetch-bmkg')->everyThreeHours();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
