@@ -33,6 +33,8 @@ class FetchBmkgWeather extends Command
             if ($nearest) {
                 $clusters[$nearest->area_code]['name'] = $nearest->name;
                 $clusters[$nearest->area_code]['incidents'][] = $incident->id;
+                $clusters[$nearest->area_code]['lats'][] = $incident->latitude;
+                $clusters[$nearest->area_code]['lons'][] = $incident->longitude;
             } else {
                 $this->warn("No station found for Incident #{$incident->id}");
             }
@@ -43,7 +45,11 @@ class FetchBmkgWeather extends Command
         foreach ($clusters as $areaCode => $cluster) {
             $this->line("Fetching weather for cluster: {$cluster['name']} ({$areaCode})...");
             
-            $weather = $bmkg->fetchByAreaCode($areaCode);
+            // Calculate representative coordinates (average)
+            $avgLat = array_sum($cluster['lats']) / count($cluster['lats']);
+            $avgLon = array_sum($cluster['lons']) / count($cluster['lons']);
+
+            $weather = $bmkg->fetchByAreaCode($areaCode, $avgLat, $avgLon);
 
             if (empty($weather)) {
                 $this->warn("Failed to fetch weather for cluster {$cluster['name']}");
