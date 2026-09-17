@@ -10,6 +10,10 @@ return [
         'base_url' => env('BMKG_API_BASE', 'https://api.bmkg.go.id'),
     ],
 
+    'openweather' => [
+        'api_key' => env('OPENWEATHER_API_KEY'),
+    ],
+
     'ai' => [
         'url' => env('AI_SERVICE_URL', 'http://localhost:8001'),
     ],
