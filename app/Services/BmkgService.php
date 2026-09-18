@@ -63,15 +63,17 @@ class BmkgService
             Log::error("BMKG: Fetch cycle failed for $areaCode: " . $e->getMessage());
         }
 
-        // 4. OpenWeatherMap Fallback (Coordinate-based)
+        // 4. OpenWeatherMap Fallback (TEMPORARILY DISABLED FOR BMKG ANALYSIS)
+        /*
         if ($lat !== null && $lon !== null) {
             $data = $this->queryOpenWeatherApi($lat, $lon);
             if (!empty($data)) {
                 return $data;
             }
         }
+        */
 
-        $this->failed("All fallbacks (BMKG ADM4/ADM2 + OWM) failed for $areaCode.");
+        $this->failed("BMKG primary and fallback attempts completed (OWM fallback skipped for analysis) for $areaCode.");
         return [];
     }
 
@@ -122,19 +124,67 @@ class BmkgService
      */
     private function queryBmkgApi(string $baseUrl, string $code): array
     {
+        // Validasi: Hanya kirim kode ADM4 (4 level: provinsi.kabupaten.kecamatan.desa)
+        // Format: XX.XX.XX.XXXX (13 karakter dengan titik)
+        if (!preg_match('/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/', $code)) {
+            Log::warning("BMKG: Skipping non-ADM4 code: $code (expected format: XX.XX.XX.XXXX)");
+            return [];
+        }
+
         try {
-            $response = Http::timeout(10)
-                ->retry(2, 200)
-                ->get($baseUrl . '/publik/prakiraan-cuaca', [
-                    'adm4' => $code
-                ]);
+            $response = Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+            ])
+            ->timeout(15)
+            ->retry(2, 500)
+            ->get($baseUrl . '/publik/prakiraan-cuaca', [
+                'adm4' => $code
+            ]);
+
+            Log::info("BMKG Raw Response for $code: " . $response->body());
 
             if ($response->successful()) {
                 $raw = $response->json();
                 
-                if (!empty($raw) && isset($raw['data'][0]['cuaca'][0])) {
-                    $forecast = $raw['data'][0]['cuaca'][0];
-                    
+                $dataList = $raw['data'] ?? [];
+                if (empty($dataList)) return [];
+
+                $regionData = is_array($dataList) && isset($dataList[0]) ? $dataList[0] : $dataList;
+                $cuacaGroups = $regionData['cuaca'] ?? [];
+
+                if (empty($cuacaGroups)) return [];
+
+                // Flatten multidimensional cuaca array (array of arrays of forecast objects)
+                $allForecasts = [];
+                foreach ($cuacaGroups as $group) {
+                    if (is_array($group)) {
+                        foreach ($group as $forecast) {
+                            if (is_array($forecast) && isset($forecast['local_datetime'])) {
+                                $allForecasts[] = $forecast;
+                            }
+                        }
+                    }
+                }
+
+                if (empty($allForecasts)) return [];
+
+                // Find forecast closest to now
+                $now = now();
+                $closestForecast = null;
+                $minDiff = PHP_INT_MAX;
+
+                foreach ($allForecasts as $forecast) {
+                    $dt = \Carbon\Carbon::parse($forecast['local_datetime'] ?? '');
+                    if (!$dt->isValid()) continue;
+
+                    $diff = abs($now->getTimestamp() - $dt->getTimestamp());
+                    if ($diff < $minDiff) {
+                        $minDiff = $diff;
+                        $closestForecast = $forecast;
+                    }
+                }
+
+                if ($closestForecast) {
                     IntegrationStatus::updateOrCreate(['source' => 'bmkg'], [
                         'status' => 'healthy', 
                         'last_success_at' => now(),
@@ -143,16 +193,17 @@ class BmkgService
                     ]);
 
                     return [
-                        'temperature' => $forecast['t'] ?? null,
-                        'humidity' => $forecast['hu'] ?? null,
-                        'wind_speed' => $forecast['ws'] ?? null,
-                        'wind_direction' => $forecast['wd'] ?? null,
-                        'recorded_at' => $forecast['local_datetime'] ?? now()->toDateTimeString(),
+                        'temperature' => $closestForecast['t'] ?? null,
+                        'humidity' => $closestForecast['hu'] ?? null,
+                        'wind_speed' => $closestForecast['ws'] ?? null,
+                        'wind_direction' => $closestForecast['wd'] ?? null,
+                        'weather_desc' => $closestForecast['weather_desc'] ?? $closestForecast['weather'] ?? null,
+                        'recorded_at' => $closestForecast['local_datetime'] ?? now()->toDateTimeString(),
                     ];
                 }
             }
             
-            Log::warning("BMKG: No data returned for code $code (Status: {$response->status()})");
+            Log::warning("BMKG: No valid forecast in response for code $code (Status: {$response->status()})");
         } catch (\Throwable $e) {
             Log::error("BMKG: Exception for code $code: " . $e->getMessage());
         }
