@@ -20,7 +20,7 @@ export default function Dashboard({ stats }) {
                             ['Active Incidents', stats.activeIncidents],
                             ['Total Reports', stats.reports],
                             ['Pending Reports', stats.pendingReports],
-                        ].map(([label, value]) => (
+                        ].map(([label, value]) => (     
                             <div key={label} className="rounded-lg bg-white p-6 shadow-sm">
                                 <p className="text-sm text-gray-500">{label}</p>
                                 <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
