@@ -10,25 +10,40 @@ class NasaFirmsService
 {
     public function fetchActiveFires(string $areaBoundingBox): array
     {
-        try {
-            $response = Http::timeout(10)->retry(2, 200)->get('https://firms.modaps.eosdis.nasa.gov/api/area/csv/' .
-                config('services.nasa.api_key') . "/VIIRS_SNPP_NRT/{$areaBoundingBox}/1");
+        $allRows = [];
+        $apiKey = config('services.nasa.api_key');
+        $satellites = [
+            'VIIRS_SNPP_NRT' => 2,
+            'MODIS_NRT' => 1,
+        ];
 
-            if ($response->failed()) {
-                $this->failed('NASA FIRMS fetch failed: HTTP '.$response->status());
-                return [];
+        foreach ($satellites as $satellite => $days) {
+            try {
+                $response = Http::timeout(10)->retry(2, 200)->get(
+                    "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{$apiKey}/{$satellite}/{$areaBoundingBox}/{$days}"
+                );
+
+                if ($response->successful()) {
+                    $rows = $this->parseCsv($response->body());
+                    $allRows = array_merge($allRows, $rows);
+                } else {
+                    $this->failed("NASA FIRMS {$satellite} fetch failed: HTTP " . $response->status());
+                }
+            } catch (\Throwable $e) {
+                $this->failed("NASA FIRMS {$satellite} error: " . $e->getMessage());
             }
-
-            $rows = $this->parseCsv($response->body());
-            IntegrationStatus::updateOrCreate(['source' => 'nasa'], [
-                'status' => 'healthy', 'last_success_at' => now(),
-                'last_error' => null, 'last_record_count' => count($rows),
-            ]);
-            return $rows;
-        } catch (\Throwable $e) {
-            $this->failed($e->getMessage());
-            return [];
         }
+
+        if (!empty($allRows)) {
+            IntegrationStatus::updateOrCreate(['source' => 'nasa'], [
+                'status' => 'healthy',
+                'last_success_at' => now(),
+                'last_error' => null,
+                'last_record_count' => count($allRows),
+            ]);
+        }
+
+        return $allRows;
     }
 
     private function parseCsv(string $csv): array
