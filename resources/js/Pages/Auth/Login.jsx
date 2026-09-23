@@ -1,12 +1,12 @@
-import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, canResetPassword, canRegister }) {
+    const [showPassword, setShowPassword] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -23,24 +23,22 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
-
-            {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
-
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
+            <Head title="Masuk" />
+            <div className="auth-topbar"><Link href="/" className="auth-back"><span className="auth-back-icon">←</span><span>Kembali</span></Link>{canRegister && <span>Belum punya akun? <Link href={route('register')}>Daftar gratis</Link></span>}</div>
+            <div className="auth-form-wrap">
+                <div className="auth-heading"><h1>Selamat Datang Kembali</h1><p>Masuk untuk melanjutkan ke dashboard Anda</p><span>♢ Admin / Petugas Khusus</span></div>
+                {status && <div className="auth-status">{status}</div>}
+                <form onSubmit={submit} className="auth-form">
+                    <div>
+                        <InputLabel htmlFor="email" value="EMAIL ATAU ID KHUSUS" />
 
                     <TextInput
                         id="email"
                         type="email"
                         name="email"
                         value={data.email}
-                        className="mt-1 block w-full"
+                        className="auth-input mt-1 block w-full"
+                        placeholder="nama@instansi.go.id atau ID Khusus"
                         autoComplete="username"
                         isFocused={true}
                         onChange={(e) => setData('email', e.target.value)}
@@ -49,52 +47,31 @@ export default function Login({ status, canResetPassword }) {
                     <InputError message={errors.email} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData('remember', e.target.checked)
-                            }
-                        />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Remember me
-                        </span>
-                    </label>
-                </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    {canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Forgot your password?
-                        </Link>
-                    )}
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
-                </div>
-            </form>
+                    <div className="auth-password-field">
+                        <div className="auth-password-row">
+                            <InputLabel htmlFor="password" value="PASSWORD" />
+                            {canResetPassword && <Link href={route('password.request')}>Lupa password?</Link>}
+                        </div>
+                        <div className="auth-password-input">
+                            <TextInput
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                name="password"
+                                value={data.password}
+                                className="auth-input mt-1 block w-full"
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                onChange={(e) => setData('password', e.target.value)}
+                            />
+                            <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label="Tampilkan password">◉</button>
+                        </div>
+                        <InputError message={errors.password} className="mt-2" />
+                    </div>
+                    <button className="auth-submit" disabled={processing}>Masuk ke Dashboard <span>→</span></button>
+                </form>
+                <div className="auth-security">♧　Dilindungi enkripsi end-to-end sistem pemantauan lingkungan.</div>
+            </div>
+            <div className="auth-copyright">© 2025 ForestWatch Network. Hak cipta dilindungi undang-undang.</div>
         </GuestLayout>
     );
 }
