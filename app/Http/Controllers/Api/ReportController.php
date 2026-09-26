@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Report;
-use App\Services\IncidentEngine;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\StoreReportRequest;
 use App\Http\Requests\ModerateReportRequest;
-use App\Services\WarningEngine;
-use App\Services\DuplicateReportDetector;
+use App\Http\Requests\StoreReportRequest;
 use App\Jobs\AnalyzeReportWithAi;
+use App\Models\Report;
 use App\Services\ActivityLogger;
+use App\Services\DuplicateReportDetector;
+use App\Services\IncidentEngine;
+use App\Services\WarningEngine;
+use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {

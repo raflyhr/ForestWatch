@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Incident;
 use App\Http\Resources\IncidentPublicResource;
+use App\Models\Incident;
 
 class IncidentController extends Controller
 {

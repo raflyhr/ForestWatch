@@ -2,16 +2,16 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Services\BmkgService;
-use App\Models\WeatherSnapshot;
 use App\Models\Incident;
+use App\Models\WeatherSnapshot;
+use App\Services\BmkgService;
+use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class FetchBmkgWeather extends Command
 {
     protected $signature = 'forestwatch:fetch-bmkg';
+
     protected $description = 'Fetch weather data from BMKG using spatial clustering for active incidents';
 
     public function handle(BmkgService $bmkg)
@@ -22,11 +22,12 @@ class FetchBmkgWeather extends Command
 
         if ($incidents->isEmpty()) {
             $this->info('No active incidents found.');
+
             return self::SUCCESS;
         }
 
-        $this->line("Mapping " . $incidents->count() . " incidents to nearest BMKG stations...");
-        
+        $this->line('Mapping '.$incidents->count().' incidents to nearest BMKG stations...');
+
         $clusters = [];
         foreach ($incidents as $incident) {
             $nearest = $bmkg->findNearestRegion($incident->latitude, $incident->longitude);
@@ -40,11 +41,11 @@ class FetchBmkgWeather extends Command
             }
         }
 
-        $this->info("Grouped " . $incidents->count() . " incidents into " . count($clusters) . " BMKG station clusters.");
+        $this->info('Grouped '.$incidents->count().' incidents into '.count($clusters).' BMKG station clusters.');
 
         foreach ($clusters as $areaCode => $cluster) {
             $this->line("Fetching weather for cluster: {$cluster['name']} ({$areaCode})...");
-            
+
             // Calculate representative coordinates (average)
             $avgLat = array_sum($cluster['lats']) / count($cluster['lats']);
             $avgLon = array_sum($cluster['lons']) / count($cluster['lons']);
@@ -53,6 +54,7 @@ class FetchBmkgWeather extends Command
 
             if (empty($weather)) {
                 $this->warn("Failed to fetch weather for cluster {$cluster['name']}");
+
                 continue;
             }
 
@@ -71,13 +73,14 @@ class FetchBmkgWeather extends Command
 
             // Bulk insert for this cluster
             WeatherSnapshot::insert($snapshots);
-            $this->info("Stored weather for " . count($snapshots) . " incidents in {$cluster['name']}.");
+            $this->info('Stored weather for '.count($snapshots)." incidents in {$cluster['name']}.");
 
             // Rate limiting pause
             usleep(500000);
         }
 
         $this->info('Batch weather processing completed.');
+
         return self::SUCCESS;
     }
 }
