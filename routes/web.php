@@ -25,6 +25,7 @@ Route::get('/dashboard', function () {
             'reports' => Report::count(),
             'pendingReports' => Report::whereIn('status', ['submitted', 'under_review'])->count(),
             'isAdmin' => request()->user()->role === 'admin',
+            'userName' => request()->user()->name,
         ],
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
