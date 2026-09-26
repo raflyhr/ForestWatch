@@ -16,6 +16,7 @@ class ResponseController extends Controller
         $response = DB::transaction(function () use ($request, $incident) {
             $response = $incident->responses()->create($request->validated());
             $incident->update(['status' => 'response']);
+
             return $response;
         });
         $logger->record($request, 'incident.response_created', $response, [], $response->toArray());

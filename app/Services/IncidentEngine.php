@@ -2,17 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\Incident;
 use App\Models\Hotspot;
+use App\Models\Incident;
 use App\Models\Report;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class IncidentEngine
 {
     public function __construct(
         private SpatialMatchingService $spatial,
         private WarningEngine $warningEngine,
+        private ForestWatchApiService $forestWatchApi,
     ) {}
 
     public function handleHotspot(Hotspot $hotspot): Incident
@@ -100,12 +101,13 @@ class IncidentEngine
         foreach ($unassigned as $hotspot) {
             $match = $this->findMatchInMemory($hotspot->latitude, $hotspot->longitude, $createdIncidents, $radiusKm);
 
-            if (!$match) {
+            if (! $match) {
                 $match = Incident::create([
                     'latitude' => $hotspot->latitude,
                     'longitude' => $hotspot->longitude,
                     'status' => 'unverified',
                 ]);
+                $this->enrichIncidentWithMicroservice($match);
                 $createdIncidents->push($match);
             }
 
@@ -152,6 +154,7 @@ class IncidentEngine
                             'longitude' => $hotspot->longitude,
                             'status' => 'unverified',
                         ]);
+                        $this->enrichIncidentWithMicroservice($newIncident);
                         $newlyCreatedInChunk->push($newIncident);
                         $incidentId = $newIncident->id;
                     }
@@ -167,14 +170,14 @@ class IncidentEngine
                     $allAffectedIncidentIds[] = $incidentId;
                 }
 
-                if (!empty($hotspotUpdates)) {
+                if (! empty($hotspotUpdates)) {
                     Hotspot::upsert($hotspotUpdates, ['id'], ['incident_id', 'updated_at']);
                 }
             });
         }
 
         $uniqueIncidentIds = array_unique($allAffectedIncidentIds);
-        
+
         foreach (array_chunk($uniqueIncidentIds, 50) as $idChunk) {
             $incidents = Incident::whereIn('id', $idChunk)->get();
             foreach ($incidents as $incident) {
@@ -195,11 +198,12 @@ class IncidentEngine
                 $deltaLng = deg2rad((float) $incident->longitude - $lng);
                 $a = sin($deltaLat / 2) ** 2
                     + cos($lat1) * cos($lat2) * sin($deltaLng / 2) ** 2;
-                
+
                 $dist = 6371 * 2 * asin(min(1, sqrt($a)));
+
                 return ['incident' => $incident, 'dist' => $dist];
             })
-            ->filter(fn($c) => $c['dist'] <= $radiusKm)
+            ->filter(fn ($c) => $c['dist'] <= $radiusKm)
             ->sortBy('dist')
             ->first()['incident'] ?? null;
     }
@@ -207,17 +211,45 @@ class IncidentEngine
     public function handleReport(Report $report): Incident
     {
         return DB::transaction(function () use ($report) {
-            $incident = $this->spatial->findNearbyIncident($report->latitude, $report->longitude)
-                ?? Incident::create([
+            $incident = $this->spatial->findNearbyIncident($report->latitude, $report->longitude);
+
+            if (! $incident) {
+                $incident = Incident::create([
                     'latitude' => $report->latitude,
                     'longitude' => $report->longitude,
                     'status' => 'unverified',
                 ]);
+                $this->enrichIncidentWithMicroservice($incident);
+            }
 
             $report->update(['incident_id' => $incident->id]);
             $this->warningEngine->recalculate($incident);
 
             return $incident;
         });
+    }
+
+    private function enrichIncidentWithMicroservice(Incident $incident): void
+    {
+        try {
+            $microserviceResponse = $this->forestWatchApi->findWaterSources(
+                (float) $incident->latitude,
+                (float) $incident->longitude
+            );
+
+            if (! $microserviceResponse || ($microserviceResponse['status'] ?? '') !== 'success') {
+                return;
+            }
+
+            $incident->update([
+                'land_classification' => $microserviceResponse['land_classification'] ?? null,
+                'water_sources' => $microserviceResponse['water_sources'] ?? null,
+                'fire_propagation' => $microserviceResponse['fire_propagation'] ?? null,
+                'algorithms_active' => $microserviceResponse['algorithms_active'] ?? null,
+                'raw_microservice_payload' => $microserviceResponse,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

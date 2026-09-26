@@ -20,6 +20,7 @@ class RoutingService
             return $response->json();
         } catch (\Throwable $e) {
             report($e);
+
             return [];
         }
     }

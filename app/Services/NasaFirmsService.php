@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use App\Models\IntegrationStatus;
 use App\Models\ActivityLog;
+use App\Models\IntegrationStatus;
+use Illuminate\Support\Facades\Http;
 
 class NasaFirmsService
 {
@@ -27,14 +27,14 @@ class NasaFirmsService
                     $rows = $this->parseCsv($response->body());
                     $allRows = array_merge($allRows, $rows);
                 } else {
-                    $this->failed("NASA FIRMS {$satellite} fetch failed: HTTP " . $response->status());
+                    $this->failed("NASA FIRMS {$satellite} fetch failed: HTTP ".$response->status());
                 }
             } catch (\Throwable $e) {
-                $this->failed("NASA FIRMS {$satellite} error: " . $e->getMessage());
+                $this->failed("NASA FIRMS {$satellite} error: ".$e->getMessage());
             }
         }
 
-        if (!empty($allRows)) {
+        if (! empty($allRows)) {
             IntegrationStatus::updateOrCreate(['source' => 'nasa'], [
                 'status' => 'healthy',
                 'last_success_at' => now(),
@@ -50,13 +50,17 @@ class NasaFirmsService
     {
         $lines = array_values(array_filter(array_map('str_getcsv', explode("\n", trim($csv))), fn ($row) => $row !== ['']));
         $header = array_shift($lines);
-        if (!$header) return [];
+        if (! $header) {
+            return [];
+        }
+
         return array_values(array_filter(array_map(function ($row) use ($header) {
             if (count($row) !== count($header)) {
                 return null;
             }
 
             $item = array_combine($header, $row);
+
             return is_numeric($item['latitude'] ?? null) && is_numeric($item['longitude'] ?? null)
                 && (float) $item['latitude'] >= -90 && (float) $item['latitude'] <= 90
                 && (float) $item['longitude'] >= -180 && (float) $item['longitude'] <= 180

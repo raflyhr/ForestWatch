@@ -12,5 +12,9 @@ class Response extends Model
     {
         return ['created_at' => 'datetime', 'updated_at' => 'datetime'];
     }
-    public function incident() { return $this->belongsTo(Incident::class); }
+
+    public function incident()
+    {
+        return $this->belongsTo(Incident::class);
+    }
 }

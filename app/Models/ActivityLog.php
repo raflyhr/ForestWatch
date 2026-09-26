@@ -13,5 +13,8 @@ class ActivityLog extends Model
         return ['old_values' => 'array', 'new_values' => 'array'];
     }
 
-    public function actor() { return $this->belongsTo(User::class, 'actor_id'); }
+    public function actor()
+    {
+        return $this->belongsTo(User::class, 'actor_id');
+    }
 }

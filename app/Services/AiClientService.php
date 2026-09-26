@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
+use App\Models\IntegrationStatus;
 use App\Models\Report;
 use Illuminate\Support\Facades\Http;
-use App\Models\IntegrationStatus;
-use App\Models\ActivityLog;
 
 class AiClientService
 {
@@ -13,7 +13,7 @@ class AiClientService
     {
         try {
             $response = Http::timeout(10)
-                ->post(config('services.ai.url') . '/analyze', [
+                ->post(config('services.ai.url').'/analyze', [
                     'report_id' => $report->id,
                     'photo_url' => $report->photo_url,
                 ]);
@@ -27,7 +27,8 @@ class AiClientService
                     'action' => 'integration.failed', 'target_type' => IntegrationStatus::class,
                     'target_id' => $status->id, 'new_values' => ['source' => 'ai', 'error' => $status->last_error],
                 ]);
-                report(new \Exception('AI service error: ' . $response->status()));
+                report(new \Exception('AI service error: '.$response->status()));
+
                 return null;
             }
 
@@ -36,6 +37,7 @@ class AiClientService
                 'status' => 'healthy', 'last_success_at' => now(),
                 'last_error' => null, 'last_record_count' => 1,
             ]);
+
             return $result;
         } catch (\Throwable $e) {
             $status = IntegrationStatus::updateOrCreate(['source' => 'ai'], [
@@ -46,6 +48,7 @@ class AiClientService
                 'target_id' => $status->id, 'new_values' => ['source' => 'ai', 'error' => $e->getMessage()],
             ]);
             report($e);
+
             return null;
         }
     }

@@ -6,17 +6,59 @@ use Illuminate\Database\Eloquent\Model;
 
 class Incident extends Model
 {
-    protected $fillable = ['latitude', 'longitude', 'status', 'warning_level', 'confidence'];
+    protected $fillable = [
+        'latitude',
+        'longitude',
+        'status',
+        'warning_level',
+        'confidence',
+        'land_classification',
+        'water_sources',
+        'fire_propagation',
+        'algorithms_active',
+        'raw_microservice_payload',
+    ];
 
     protected function casts(): array
     {
-        return ['latitude' => 'float', 'longitude' => 'float'];
+        return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+            'land_classification' => 'array',
+            'water_sources' => 'array',
+            'fire_propagation' => 'array',
+            'algorithms_active' => 'array',
+            'raw_microservice_payload' => 'array',
+        ];
     }
 
-    public function hotspots()      { return $this->hasMany(Hotspot::class); }
-    public function reports()       { return $this->hasMany(Report::class); }
-    public function weatherSnapshots() { return $this->hasMany(WeatherSnapshot::class); }
-    public function warnings()      { return $this->hasMany(Warning::class); }
-    public function verifications() { return $this->hasMany(Verification::class); }
-    public function responses()     { return $this->hasMany(Response::class); }
+    public function hotspots()
+    {
+        return $this->hasMany(Hotspot::class);
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
+    }
+
+    public function weatherSnapshots()
+    {
+        return $this->hasMany(WeatherSnapshot::class);
+    }
+
+    public function warnings()
+    {
+        return $this->hasMany(Warning::class);
+    }
+
+    public function verifications()
+    {
+        return $this->hasMany(Verification::class);
+    }
+
+    public function responses()
+    {
+        return $this->hasMany(Response::class);
+    }
 }
