@@ -10,9 +10,9 @@ class NasaFirmsService
 {
     public function fetchActiveFires(string $areaBoundingBox): array
     {
-        try {
-            $response = Http::timeout(10)->retry(2, 200)->get('https://firms.modaps.eosdis.nasa.gov/api/area/csv/' .
-                config('services.nasa.api_key') . "/VIIRS_SNPP_NRT/{$areaBoundingBox}/1");
+        $satellites = ['VIIRS_SNPP_NRT' => 1];
+        $apiKey = config('services.nasa.api_key');
+        $allRows = [];
 
         foreach ($satellites as $satellite => $days) {
             try {
@@ -29,17 +29,16 @@ class NasaFirmsService
             } catch (\Throwable $e) {
                 $this->failed("NASA FIRMS {$satellite} error: ".$e->getMessage());
             }
+        }
 
         if (! empty($allRows)) {
             IntegrationStatus::updateOrCreate(['source' => 'nasa'], [
                 'status' => 'healthy', 'last_success_at' => now(),
-                'last_error' => null, 'last_record_count' => count($rows),
+                'last_error' => null, 'last_record_count' => count($allRows),
             ]);
-            return $rows;
-        } catch (\Throwable $e) {
-            $this->failed($e->getMessage());
-            return [];
         }
+
+        return $allRows;
     }
 
     private function parseCsv(string $csv): array
