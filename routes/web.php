@@ -16,22 +16,33 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    $incidents = Incident::latest()->take(12)->get();
     return Inertia::render('Dashboard', [
         'stats' => [
             'incidents' => Incident::count(),
             'activeIncidents' => Incident::whereNotIn('status', ['closed', 'false_alarm'])->count(),
             'reports' => \App\Models\Report::count(),
             'pendingReports' => \App\Models\Report::whereIn('status', ['submitted', 'under_review'])->count(),
+            'criticalIncidents' => Incident::where('warning_level', 'critical')->whereNotIn('status', ['closed', 'false_alarm'])->count(),
+            'highIncidents' => Incident::where('warning_level', 'high')->whereNotIn('status', ['closed', 'false_alarm'])->count(),
+            'mediumIncidents' => Incident::where('warning_level', 'medium')->whereNotIn('status', ['closed', 'false_alarm'])->count(),
+            'resolvedToday' => Incident::whereIn('status', ['closed', 'false_alarm'])->whereDate('updated_at', today())->count(),
             'isAdmin' => request()->user()->role === 'admin',
             'userName' => request()->user()->name,
         ],
+        'incidents' => $incidents,
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/reports/create', fn () => Inertia::render('Reports/Create'))->name('reports.create');
+Route::get('/reports/create', fn () => Inertia::render('Reports/Create', ['stats' => [
+    'pendingReports' => \App\Models\Report::whereIn('status', ['submitted', 'under_review'])->count(),
+]]) )->name('reports.create');
 
 Route::get('/incidents', function () {
-    return Inertia::render('Incidents/Index', ['incidents' => Incident::latest()->get()]);
+    return Inertia::render('Incidents/Index', ['incidents' => Incident::latest()->get(), 'stats' => [
+        'activeIncidents' => Incident::whereNotIn('status', ['closed', 'false_alarm'])->count(),
+        'pendingReports' => \App\Models\Report::whereIn('status', ['submitted', 'under_review'])->count(),
+    ]]);
 })->name('incidents.index');
 
 Route::get('/incidents/{incident}', function (Incident $incident) {
