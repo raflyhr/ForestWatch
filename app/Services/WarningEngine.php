@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Incident;
-use App\Models\Warning;
 use App\Models\SystemSetting;
+use App\Models\Warning;
 
 class WarningEngine
 {
@@ -55,7 +55,7 @@ class WarningEngine
             $score >= $thresholds['critical'] => 'critical',
             $score >= $thresholds['high'] => 'high',
             $score >= $thresholds['medium'] => 'medium',
-            default      => 'low',
+            default => 'low',
         };
 
         $evidenceCount = $incident->hotspots()->count()

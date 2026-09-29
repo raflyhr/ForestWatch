@@ -25,4 +25,5 @@ return [
         'high' => env('WARNING_THRESHOLD_HIGH', 55),
         'critical' => env('WARNING_THRESHOLD_CRITICAL', 80),
     ],
+    'water_api_url' => env('FORESTWATCH_FIND_WATER_API_URL'),
 ];

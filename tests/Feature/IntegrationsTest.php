@@ -2,51 +2,33 @@
 
 namespace Tests\Feature;
 
+use App\Services\ForestWatchApiService;
+use App\Services\RoutingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
-use App\Services\BmkgService;
-use App\Services\OsmService;
-use App\Services\RoutingService;
-use App\Models\IntegrationStatus;
 
 class IntegrationsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_bmkg_service_fetches_weather(): void
+    public function test_forestwatch_microservice_fetches_water_sources(): void
     {
+        config(['forestwatch.water_api_url' => 'https://forestwatch.railway.app/api/water']);
+
         Http::fake([
-            'api.bmkg.go.id/*' => Http::response([
-                ['area_code' => '501210', 'temperature' => 30.5, 'humidity' => 80, 'wind_speed' => 12, 'wind_direction' => 'NW', 'recorded_at' => '2026-09-14 10:00:00']
+            'forestwatch.railway.app/*' => Http::response([
+                'status' => 'success',
+                'land_classification' => ['terrain_type' => 'Lahan Mineral'],
+                'water_sources' => [['id' => 'FW-001']],
             ], 200),
         ]);
 
-        $service = new BmkgService();
-        $data = $service->fetchWeatherData('501210');
+        $service = new ForestWatchApiService;
+        $data = $service->findWaterSources(-6.2, 106.8);
 
-        $this->assertCount(1, $data);
-        $this->assertEquals('501210', $data[0]['area_code']);
-        $this->assertDatabaseHas('integration_statuses', [
-            'source' => 'bmkg',
-            'status' => 'healthy',
-        ]);
-    }
-
-    public function test_osm_service_fetches_water_sources(): void
-    {
-        Http::fake([
-            'overpass-api.de/*' => Http::response([
-                'elements' => [
-                    ['type' => 'node', 'id' => 123, 'lat' => -6.2, 'lon' => 106.8]
-                ]
-            ], 200),
-        ]);
-
-        $service = new OsmService();
-        $data = $service->fetchWaterSources(-6.2, 106.8);
-
-        $this->assertCount(1, $data);
+        $this->assertEquals('success', $data['status']);
+        $this->assertCount(1, $data['water_sources']);
     }
 
     public function test_routing_service_fetches_route(): void
@@ -54,11 +36,11 @@ class IntegrationsTest extends TestCase
         Http::fake([
             'router.project-osrm.org/*' => Http::response([
                 'code' => 'Ok',
-                'routes' => []
+                'routes' => [],
             ], 200),
         ]);
 
-        $service = new RoutingService();
+        $service = new RoutingService;
         $data = $service->getRoute(-6.2, 106.8, -6.3, 106.9);
 
         $this->assertEquals('Ok', $data['code']);

@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\VerifyIncidentRequest;
 use App\Models\Incident;
 use App\Models\Verification;
-use Illuminate\Http\Request;
-use App\Http\Requests\VerifyIncidentRequest;
+use App\Services\ActivityLogger;
 use App\Services\WarningEngine;
 use Illuminate\Support\Facades\DB;
-use App\Services\ActivityLogger;
 
 class VerificationController extends Controller
 {

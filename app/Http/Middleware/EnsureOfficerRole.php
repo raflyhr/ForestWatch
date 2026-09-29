@@ -18,6 +18,7 @@ class EnsureOfficerRole
         if (! $user || $user->is_active === false || ! in_array($user->role, $allowedRoles, true)) {
             abort(403, 'Unauthorized');
         }
+
         return $next($request);
     }
 }

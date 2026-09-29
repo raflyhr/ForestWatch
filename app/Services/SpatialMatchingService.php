@@ -8,7 +8,8 @@ class SpatialMatchingService
 {
     private int $radiusMeters;
 
-    public function __construct(?int $radiusMeters = null) {
+    public function __construct(?int $radiusMeters = null)
+    {
         $this->radiusMeters = $radiusMeters ?? config('forestwatch.spatial_radius_meters', 1500);
     }
 

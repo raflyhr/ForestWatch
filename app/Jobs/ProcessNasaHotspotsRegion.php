@@ -2,14 +2,14 @@
 
 namespace App\Jobs;
 
+use App\Models\Hotspot;
+use App\Services\IncidentEngine;
+use App\Services\NasaFirmsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Services\NasaFirmsService;
-use App\Services\IncidentEngine;
-use App\Models\Hotspot;
 use Illuminate\Support\Carbon;
 
 class ProcessNasaHotspotsRegion implements ShouldQueue
@@ -18,9 +18,7 @@ class ProcessNasaHotspotsRegion implements ShouldQueue
 
     public $timeout = 600;
 
-    public function __construct(public string $regionName, public string $boundingBox)
-    {
-    }
+    public function __construct(public string $regionName, public string $boundingBox) {}
 
     public function handle(NasaFirmsService $nasa, IncidentEngine $engine): void
     {
@@ -34,7 +32,7 @@ class ProcessNasaHotspotsRegion implements ShouldQueue
 
         foreach ($data as $row) {
             $time = str_pad((string) ($row['acq_time'] ?? '0000'), 4, '0', STR_PAD_LEFT);
-            $detectedAt = ($row['acq_date'] ?? now()->toDateString()) . ' ' . substr($time, 0, 2) . ':' . substr($time, 2, 2) . ':00';
+            $detectedAt = ($row['acq_date'] ?? now()->toDateString()).' '.substr($time, 0, 2).':'.substr($time, 2, 2).':00';
 
             $hotspotsData[] = [
                 'latitude' => $row['latitude'],
@@ -59,7 +57,7 @@ class ProcessNasaHotspotsRegion implements ShouldQueue
             );
         }
 
-                // Dispatch async job to link hotspots to incidents and recalculate warnings
+        // Dispatch async job to link hotspots to incidents and recalculate warnings
         LinkHotspotsToIncidentsJob::dispatch($now->format('Y-m-d H:i:s'));
     }
 }

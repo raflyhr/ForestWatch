@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Models\Incident;
+use App\Models\Report;
+use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Models\Incident;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -57,7 +59,7 @@ Route::middleware(['auth', 'role:officer'])->group(function () {
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin', fn () => Inertia::render('Admin/Index', [
-        'officerCount' => \App\Models\User::where('role', 'officer')->count(),
+        'officerCount' => User::where('role', 'officer')->count(),
         'incidentCount' => Incident::count(),
     ]))->name('admin.index');
 });

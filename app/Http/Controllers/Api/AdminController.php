@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Incident;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use App\Models\IntegrationStatus;
 use App\Models\SystemSetting;
-use App\Models\ActivityLog;
+use App\Models\User;
 use App\Services\ActivityLogger;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -103,7 +103,7 @@ class AdminController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'unique:users,email,' . $user->id],
+            'email' => ['sometimes', 'email', 'unique:users,email,'.$user->id],
         ]);
 
         $old = $user->only(['name', 'email', 'role']);

@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('bmkg_regions')) {
+        if (! Schema::hasTable('bmkg_regions')) {
             Schema::create('bmkg_regions', function (Blueprint $table) {
                 $table->id();
                 $table->string('area_code', 25)->unique();

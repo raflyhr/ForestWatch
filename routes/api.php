@@ -1,14 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\HotspotController;
 use App\Http\Controllers\Api\IncidentController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\ResponseController;
 use App\Http\Controllers\Api\VerificationController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\AdminController;
-use App\Http\Controllers\Api\HotspotController;
-use App\Http\Controllers\Api\WeatherController;
 use App\Http\Controllers\Api\WaterSourceController;
+use App\Http\Controllers\Api\WeatherController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/hotspots', [HotspotController::class, 'index']);
 Route::get('/incidents', [IncidentController::class, 'index']);
@@ -23,8 +24,8 @@ Route::post('/auth/token', [AuthController::class, 'token']);
 Route::middleware(['auth:sanctum', 'role:officer,admin'])->group(function () {
     Route::post('/incidents/{incident}/verify', [VerificationController::class, 'store']);
     Route::post('/reports/{report}/moderate', [ReportController::class, 'moderate']);
-    Route::post('/incidents/{incident}/response', [\App\Http\Controllers\Api\ResponseController::class, 'store']);
-    Route::patch('/responses/{response}', [\App\Http\Controllers\Api\ResponseController::class, 'update']);
+    Route::post('/incidents/{incident}/response', [ResponseController::class, 'store']);
+    Route::patch('/responses/{response}', [ResponseController::class, 'update']);
 });
 
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {

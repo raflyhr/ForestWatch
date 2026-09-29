@@ -2,14 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Models\Hotspot;
+use App\Services\IncidentEngine;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Services\IncidentEngine;
-use App\Models\Hotspot;
-use Illuminate\Support\Carbon;
 
 class LinkHotspotsToIncidentsJob implements ShouldQueue
 {
@@ -17,9 +16,7 @@ class LinkHotspotsToIncidentsJob implements ShouldQueue
 
     public $timeout = 1800; // 30 minutes
 
-    public function __construct(public string $startTime)
-    {
-    }
+    public function __construct(public string $startTime) {}
 
     public function handle(IncidentEngine $engine): void
     {

@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Models\IntegrationStatus;
 use App\Models\ActivityLog;
+use App\Models\IntegrationStatus;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class BmkgService
 {
     /**
-     * Fetch weather data from BMKG using a dual fallback mechanism (ADM4 -> ADM2) 
+     * Fetch weather data from BMKG using a dual fallback mechanism (ADM4 -> ADM2)
      * with OpenWeatherMap coordinate-based fallback.
      */
     public function fetchByAreaCode(string $areaCode, ?float $lat = null, ?float $lon = null): array
@@ -37,8 +38,9 @@ class BmkgService
         if (isset($overrideMap[$areaCode])) {
             $altCode = $overrideMap[$areaCode];
             $data = $this->queryBmkgApi($baseUrl, $altCode);
-            if (!empty($data)) {
+            if (! empty($data)) {
                 DB::table('bmkg_regions')->where('area_code', $areaCode)->update(['area_code' => $altCode]);
+
                 return $data;
             }
         }
@@ -46,21 +48,24 @@ class BmkgService
         try {
             // 2. Primary Attempt (Full ADM4 Code)
             $data = $this->queryBmkgApi($baseUrl, $areaCode);
-            if (!empty($data)) return $data;
+            if (! empty($data)) {
+                return $data;
+            }
 
             // 3. Automatic Fallback (Shortened to ADM2 format)
             if (strlen($areaCode) > 5) {
                 $fallbackCode = substr($areaCode, 0, 5);
                 $data = $this->queryBmkgApi($baseUrl, $fallbackCode);
-                
-                if (!empty($data)) {
+
+                if (! empty($data)) {
                     // Self-Healing: Update database so subsequent runs use the working code
                     DB::table('bmkg_regions')->where('area_code', $areaCode)->update(['area_code' => $fallbackCode]);
+
                     return $data;
                 }
             }
         } catch (\Throwable $e) {
-            Log::error("BMKG: Fetch cycle failed for $areaCode: " . $e->getMessage());
+            Log::error("BMKG: Fetch cycle failed for $areaCode: ".$e->getMessage());
         }
 
         // 4. OpenWeatherMap Fallback (TEMPORARILY DISABLED FOR BMKG ANALYSIS)
@@ -74,6 +79,7 @@ class BmkgService
         */
 
         $this->failed("BMKG primary and fallback attempts completed (OWM fallback skipped for analysis) for $areaCode.");
+
         return [];
     }
 
@@ -83,9 +89,10 @@ class BmkgService
     private function queryOpenWeatherApi(float $lat, float $lon): array
     {
         $apiKey = config('services.openweather.api_key');
-        
-        if (!$apiKey) {
+
+        if (! $apiKey) {
             Log::warning('OpenWeatherMap API key not configured, skipping fallback');
+
             return [];
         }
 
@@ -101,7 +108,7 @@ class BmkgService
 
             if ($response->successful()) {
                 $raw = $response->json();
-                
+
                 return [
                     'temperature' => $raw['main']['temp'] ?? null,
                     'humidity' => $raw['main']['humidity'] ?? null,
@@ -113,7 +120,7 @@ class BmkgService
 
             Log::warning("OpenWeatherMap: No data for lat=$lat, lon=$lon (Status: {$response->status()})");
         } catch (\Throwable $e) {
-            Log::error("OpenWeatherMap: Exception for lat=$lat, lon=$lon: " . $e->getMessage());
+            Log::error("OpenWeatherMap: Exception for lat=$lat, lon=$lon: ".$e->getMessage());
         }
 
         return [];
@@ -126,33 +133,38 @@ class BmkgService
     {
         // Validasi: Hanya kirim kode ADM4 (4 level: provinsi.kabupaten.kecamatan.desa)
         // Format: XX.XX.XX.XXXX (13 karakter dengan titik)
-        if (!preg_match('/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/', $code)) {
+        if (! preg_match('/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/', $code)) {
             Log::warning("BMKG: Skipping non-ADM4 code: $code (expected format: XX.XX.XX.XXXX)");
+
             return [];
         }
 
         try {
             $response = Http::withHeaders([
-                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
             ])
-            ->timeout(15)
-            ->retry(2, 500)
-            ->get($baseUrl . '/publik/prakiraan-cuaca', [
-                'adm4' => $code
-            ]);
+                ->timeout(15)
+                ->retry(2, 500)
+                ->get($baseUrl.'/publik/prakiraan-cuaca', [
+                    'adm4' => $code,
+                ]);
 
-            Log::info("BMKG Raw Response for $code: " . $response->body());
+            Log::info("BMKG Raw Response for $code: ".$response->body());
 
             if ($response->successful()) {
                 $raw = $response->json();
-                
+
                 $dataList = $raw['data'] ?? [];
-                if (empty($dataList)) return [];
+                if (empty($dataList)) {
+                    return [];
+                }
 
                 $regionData = is_array($dataList) && isset($dataList[0]) ? $dataList[0] : $dataList;
                 $cuacaGroups = $regionData['cuaca'] ?? [];
 
-                if (empty($cuacaGroups)) return [];
+                if (empty($cuacaGroups)) {
+                    return [];
+                }
 
                 // Flatten multidimensional cuaca array (array of arrays of forecast objects)
                 $allForecasts = [];
@@ -166,7 +178,9 @@ class BmkgService
                     }
                 }
 
-                if (empty($allForecasts)) return [];
+                if (empty($allForecasts)) {
+                    return [];
+                }
 
                 // Find forecast closest to now
                 $now = now();
@@ -174,8 +188,10 @@ class BmkgService
                 $minDiff = PHP_INT_MAX;
 
                 foreach ($allForecasts as $forecast) {
-                    $dt = \Carbon\Carbon::parse($forecast['local_datetime'] ?? '');
-                    if (!$dt->isValid()) continue;
+                    $dt = Carbon::parse($forecast['local_datetime'] ?? '');
+                    if (! $dt->isValid()) {
+                        continue;
+                    }
 
                     $diff = abs($now->getTimestamp() - $dt->getTimestamp());
                     if ($diff < $minDiff) {
@@ -186,9 +202,9 @@ class BmkgService
 
                 if ($closestForecast) {
                     IntegrationStatus::updateOrCreate(['source' => 'bmkg'], [
-                        'status' => 'healthy', 
+                        'status' => 'healthy',
                         'last_success_at' => now(),
-                        'last_error' => null, 
+                        'last_error' => null,
                         'last_record_count' => 1,
                     ]);
 
@@ -202,10 +218,10 @@ class BmkgService
                     ];
                 }
             }
-            
+
             Log::warning("BMKG: No valid forecast in response for code $code (Status: {$response->status()})");
         } catch (\Throwable $e) {
-            Log::error("BMKG: Exception for code $code: " . $e->getMessage());
+            Log::error("BMKG: Exception for code $code: ".$e->getMessage());
         }
 
         return [];
@@ -227,17 +243,18 @@ class BmkgService
     {
         try {
             $status = IntegrationStatus::updateOrCreate(['source' => 'bmkg'], [
-                'status' => 'failed', 
-                'last_failure_at' => now(), 
+                'status' => 'failed',
+                'last_failure_at' => now(),
                 'last_error' => $message,
             ]);
 
             ActivityLog::create([
-                'action' => 'integration.failed', 
+                'action' => 'integration.failed',
                 'target_type' => IntegrationStatus::class,
-                'target_id' => $status->id, 
+                'target_id' => $status->id,
                 'new_values' => ['source' => 'bmkg', 'error' => $message],
             ]);
-        } catch (\Throwable $ignore) {}
+        } catch (\Throwable $ignore) {
+        }
     }
 }

@@ -19,6 +19,13 @@ class Report extends Model
         return ['latitude' => 'float', 'longitude' => 'float', 'is_duplicate' => 'boolean'];
     }
 
-    public function incident()   { return $this->belongsTo(Incident::class); }
-    public function aiAssessment() { return $this->hasOne(AiAssessment::class); }
+    public function incident()
+    {
+        return $this->belongsTo(Incident::class);
+    }
+
+    public function aiAssessment()
+    {
+        return $this->hasOne(AiAssessment::class);
+    }
 }

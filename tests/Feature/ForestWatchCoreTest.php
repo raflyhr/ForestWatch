@@ -1,12 +1,12 @@
 <?php
 
-use App\Models\Incident;
-use App\Models\User;
-use App\Models\Verification;
-use App\Models\Report;
 use App\Models\ActivityLog;
+use App\Models\Incident;
+use App\Models\Report;
 use App\Models\Response;
 use App\Models\SystemSetting;
+use App\Models\User;
+use App\Models\Verification;
 use App\Services\DuplicateReportDetector;
 use App\Services\SpatialMatchingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
