@@ -10,9 +10,12 @@ class NasaFirmsService
 {
     public function fetchActiveFires(string $areaBoundingBox): array
     {
-        $satellites = ['VIIRS_SNPP_NRT' => 1];
-        $apiKey = config('services.nasa.api_key');
         $allRows = [];
+        $apiKey = config('services.nasa.api_key');
+        $satellites = [
+            'VIIRS_SNPP_NRT' => 2,
+            'MODIS_NRT' => 1,
+        ];
 
         foreach ($satellites as $satellite => $days) {
             try {
@@ -24,17 +27,19 @@ class NasaFirmsService
                     $rows = $this->parseCsv($response->body());
                     $allRows = array_merge($allRows, $rows);
                 } else {
-                    $this->failed("NASA FIRMS {$satellite} fetch failed: HTTP ".$response->status());
+                    $this->failed("NASA FIRMS {$satellite} fetch failed: HTTP " . $response->status());
                 }
             } catch (\Throwable $e) {
-                $this->failed("NASA FIRMS {$satellite} error: ".$e->getMessage());
+                $this->failed("NASA FIRMS {$satellite} error: " . $e->getMessage());
             }
         }
 
-        if (! empty($allRows)) {
+        if (!empty($allRows)) {
             IntegrationStatus::updateOrCreate(['source' => 'nasa'], [
-                'status' => 'healthy', 'last_success_at' => now(),
-                'last_error' => null, 'last_record_count' => count($allRows),
+                'status' => 'healthy',
+                'last_success_at' => now(),
+                'last_error' => null,
+                'last_record_count' => count($allRows),
             ]);
         }
 

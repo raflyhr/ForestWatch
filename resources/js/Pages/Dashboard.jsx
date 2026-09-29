@@ -1,48 +1,27 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useMemo, useState } from 'react';
 
-function DashboardMap() {
-    const mapRef = useRef(null);
+const priority = (incident) => incident.warning_level ?? (incident.status === 'response' ? 'high' : 'medium');
 
-    useEffect(() => {
-        const map = L.map(mapRef.current, { zoomControl: true, attributionControl: true }).setView([-2.25, 113.92], 6);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' }).addTo(map);
-        L.polygon([[-1.2, 112.8], [-1.45, 115.4], [-3.2, 115.1], [-3.4, 112.7]], { color: '#46d5db', weight: 2, fillColor: '#0d6a60', fillOpacity: 0.2 }).addTo(map);
-        [[-2.05, 113.95], [-1.8, 114.35], [-2.5, 113.55]].forEach((point) => L.circleMarker(point, { radius: 8, color: '#ff5b2f', fillColor: '#ffd894', fillOpacity: 1, weight: 3 }).addTo(map));
-        const resizeObserver = new ResizeObserver(() => map.invalidateSize());
-        resizeObserver.observe(mapRef.current);
-        return () => { resizeObserver.disconnect(); map.remove(); };
-    }, []);
+export default function Dashboard({ stats, incidents = [] }) {
+    const [filter, setFilter] = useState('all');
+    const filteredIncidents = useMemo(() => incidents.filter((incident) => filter === 'all' || priority(incident) === filter), [filter, incidents]);
+    const cards = [
+        ['critical', '⚠', stats.criticalIncidents, 'Insiden Kritis', 'critical'],
+        ['high', '⚠', stats.highIncidents, 'Prioritas Tinggi', 'high'],
+        ['medium', '⌁', stats.mediumIncidents, 'Sedang Dipantau', 'medium'],
+        ['resolved', '✓', stats.resolvedToday, 'Selesai Hari Ini', 'safe'],
+    ];
 
-    return <div ref={mapRef} className="dashboard-leaflet-map" aria-label="Peta monitoring satelit ForestWatch" />;
-}
-
-export default function Dashboard({ stats }) {
-    return (
-        <AuthenticatedLayout
-            header={<span>ForestWatch Operations</span>}
-        >
-            <Head title="Dashboard" />
-
-            <div className="dashboard-page">
-                <div className="dashboard-intro"><div><p className="dashboard-kicker">ENVIRONMENTAL COMMAND CENTER</p><h1>Selamat datang, {stats.userName ?? 'Petugas'}</h1><p>Pantau kondisi hutan, laporan warga, dan respons insiden dari satu ruang kendali.</p></div><a className="dashboard-primary" href="/reports/create">+ Laporan baru</a></div>
-                    <div className="dashboard-stats">
-                        {[
-                            ['Total Incidents', stats.incidents],
-                            ['Active Incidents', stats.activeIncidents],
-                            ['Total Reports', stats.reports],
-                            ['Pending Reports', stats.pendingReports],
-                        ].map(([label, value]) => (     
-                            <div key={label} className="dashboard-stat"><span className="dashboard-stat-icon">{label.includes('Incident') ? '◉' : '▣'}</span><p>{label}</p><strong>{value}</strong><small>Data terhubung real-time</small>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="dashboard-grid"><section className="dashboard-map-card"><div className="panel-heading"><div><p>LIVE MONITORING</p><h2>Area pemantauan aktif</h2></div><a href="/incidents">Buka map →</a></div><DashboardMap /></section><section className="dashboard-alert-card"><div className="panel-heading"><div><p>RESPONSE QUEUE</p><h2>Status respons</h2></div><span className="online-dot">● Online</span></div><div className="alert-row"><span className="alert-icon">!</span><div><b>{stats.pendingReports} laporan menunggu verifikasi</b><small>Perlu ditinjau petugas lapangan</small></div></div><div className="alert-row"><span className="alert-icon green">✓</span><div><b>{stats.activeIncidents} insiden aktif</b><small>Monitoring dan respons berjalan</small></div></div></section></div><section className="dashboard-reports"><div className="panel-heading"><div><p>FIELD ACTIVITY</p><h2>Laporan terbaru</h2></div><a href="/incidents">Lihat semua →</a></div><div className="empty-report"><span>◌</span><div><b>Belum ada laporan terbaru</b><small>Laporan warga akan muncul di sini setelah dikirim.</small></div><a href="/reports/create">Kirim laporan</a></div></section>
-            </div>
-        </AuthenticatedLayout>
-    );
+    return <AuthenticatedLayout header={<span>Pusat Kendali Insiden</span>}>
+        <Head title="Pusat Kendali Insiden" />
+        <div className="home-dashboard">
+            <header className="home-header"><div><b>Pusat Kendali Insiden</b><small>Senin, 26 Mei 2025 · Data diperbarui langsung</small></div><div className="home-search">⌕ <span>Cari insiden atau lokasi...</span></div><button className="home-notification">♧</button><span className="home-mini-avatar">AR</span></header>
+            <section className="home-welcome"><div><p>● SISTEM PEMANTAUAN AKTIF</p><h1>Selamat pagi, {stats.userName ?? 'Andi'}</h1><span>Berikut kondisi kebakaran hutan dan lahan hari ini.</span></div><a href="/incidents">▧ &nbsp; Buka Peta Monitoring</a></section>
+            <section className="home-stats">{cards.map(([key, icon, value, label, tone]) => <div className={`home-stat ${tone}`} key={key}><span className="home-stat-icon">{icon}</span><small>↗ {key === 'critical' ? '2 baru' : key === 'resolved' ? '24%' : '12%'}</small><strong>{value}</strong><p>{label}</p><i>▂▃▅▆▇</i></div>)}</section>
+            <section className="home-alert"><span>⚠</span><div><b>PERLU TINDAKAN SEGERA <small>4 MENIT LALU</small></b><p>{stats.pendingReports} laporan perlu diverifikasi oleh petugas lapangan.</p></div><a href="/incidents">Verifikasi Sekarang</a><button>›</button></section>
+            <section className="home-content"><div className="incident-panel"><div className="home-panel-title"><div><h2>Insiden Aktif</h2><p>Diurutkan berdasarkan tingkat prioritas</p></div><div className="home-filters">{[['all', 'Semua'], ['critical', 'Kritis'], ['high', 'Tinggi'], ['medium', 'Sedang']].map(([value, label]) => <button className={filter === value ? 'active' : ''} onClick={() => setFilter(value)} key={value}>{label}</button>)}</div></div><div className="incident-table-head"><span>INSIDEN & LOKASI</span><span>PRIORITAS</span><span>SUMBER</span><span>STATUS</span><span>AKSI</span></div>{filteredIncidents.slice(0, 6).map((incident) => <div className="incident-row" key={incident.id}><span><b>⌖ &nbsp; {incident.location_name ?? `Insiden #${incident.id}`}</b><small>{incident.latitude}, {incident.longitude} · {incident.created_at ? 'baru' : 'terpantau'}</small></span><em className={`priority-${priority(incident)}`}>● {priority(incident).toUpperCase()}</em><span>NASA Hotspot</span><span className="incident-status">● {incident.status ?? 'Belum diverifikasi'}</span><a href={`/incidents/${incident.id}`}>›</a></div>)}{!filteredIncidents.length && <div className="incident-empty">Belum ada insiden pada filter ini.</div>}<footer>Menampilkan {Math.min(filteredIncidents.length, 6)} insiden aktif <a href="/incidents">Lihat semua insiden ›</a></footer></div></section>
+        </div>
+    </AuthenticatedLayout>;
 }
