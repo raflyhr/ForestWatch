@@ -7,6 +7,7 @@ use App\Models\WeatherSnapshot;
 use App\Services\BmkgService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class FetchBmkgWeather extends Command
 {
@@ -16,18 +17,31 @@ class FetchBmkgWeather extends Command
 
     public function handle(BmkgService $bmkg)
     {
-        $this->line('Querying active incidents (last 24h)...');
-        $incidents = Incident::where('created_at', '>=', Carbon::now()->subDay())
+        $this->logMessage('info', 'Starting BMKG weather fetch...');
+        $incidents = Incident::whereNotIn('status', ['closed', 'false_alarm'])
             ->get(['id', 'latitude', 'longitude']);
 
         if ($incidents->isEmpty()) {
-            $this->info('No active incidents found.');
-
+            $this->logMessage('info', 'No active incidents found in the last 24 hours.');
             return self::SUCCESS;
         }
 
-        $this->line('Mapping '.$incidents->count().' incidents to nearest BMKG stations...');
+        $this->logMessage('info', 'Found ' . $incidents->count() . ' incidents to process.');
+        $this->processIncidents($incidents, $bmkg);
 
+        $this->logMessage('info', 'Batch weather processing completed.');
+
+        return self::SUCCESS;
+    }
+
+    public static function dispatchForIncidents($incidents): void
+    {
+        \App\Jobs\FetchBmkgForIncidentsJob::dispatch($incidents->pluck('id')->toArray());
+    }
+
+    public function processIncidents($incidents, BmkgService $bmkg): void
+    {
+        $this->logMessage('info', 'Clustering incidents by nearest BMKG region...');
         $clusters = [];
         foreach ($incidents as $incident) {
             $nearest = $bmkg->findNearestRegion($incident->latitude, $incident->longitude);
@@ -36,51 +50,53 @@ class FetchBmkgWeather extends Command
                 $clusters[$nearest->area_code]['incidents'][] = $incident->id;
                 $clusters[$nearest->area_code]['lats'][] = $incident->latitude;
                 $clusters[$nearest->area_code]['lons'][] = $incident->longitude;
-            } else {
-                $this->warn("No station found for Incident #{$incident->id}");
             }
         }
 
-        $this->info('Grouped '.$incidents->count().' incidents into '.count($clusters).' BMKG station clusters.');
-
+        $this->logMessage('info', 'Processing ' . count($clusters) . ' region clusters...');
         foreach ($clusters as $areaCode => $cluster) {
-            $this->line("Fetching weather for cluster: {$cluster['name']} ({$areaCode})...");
-
-            // Calculate representative coordinates (average)
             $avgLat = array_sum($cluster['lats']) / count($cluster['lats']);
             $avgLon = array_sum($cluster['lons']) / count($cluster['lons']);
 
-            $weather = $bmkg->fetchByAreaCode($areaCode, $avgLat, $avgLon);
+            $this->logMessage('info', "Fetching weather for area: {$cluster['name']} ({$areaCode})...");
+            try {
+                $weather = $bmkg->fetchByAreaCode($areaCode, $avgLat, $avgLon);
 
-            if (empty($weather)) {
-                $this->warn("Failed to fetch weather for cluster {$cluster['name']}");
+                if (empty($weather)) {
+                    $this->logMessage('warn', "No weather data for {$areaCode}");
+                    continue;
+                }
 
-                continue;
+                $snapshots = [];
+                foreach ($cluster['incidents'] as $incidentId) {
+                    $snapshots[] = [
+                        'incident_id' => $incidentId,
+                        'temperature' => $weather['temperature'],
+                        'humidity' => $weather['humidity'],
+                        'wind_speed' => $weather['wind_speed'],
+                        'wind_direction' => $weather['wind_direction'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+
+                $this->logMessage('info', 'Inserting ' . count($snapshots) . " snapshots for area {$areaCode}...");
+                WeatherSnapshot::insert($snapshots);
+            } catch (\Throwable $e) {
+                $this->logMessage('error', "Error processing {$areaCode}: " . $e->getMessage());
+                Log::error("BMKG Command: Failed for area {$areaCode}", ['error' => $e->getMessage()]);
             }
 
-            $snapshots = [];
-            foreach ($cluster['incidents'] as $incidentId) {
-                $snapshots[] = [
-                    'incident_id' => $incidentId,
-                    'temperature' => $weather['temperature'],
-                    'humidity' => $weather['humidity'],
-                    'wind_speed' => $weather['wind_speed'],
-                    'wind_direction' => $weather['wind_direction'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-
-            // Bulk insert for this cluster
-            WeatherSnapshot::insert($snapshots);
-            $this->info('Stored weather for '.count($snapshots)." incidents in {$cluster['name']}.");
-
-            // Rate limiting pause
-            usleep(500000);
+            usleep(500000); // 0.5s delay to be polite to BMKG API
         }
+    }
 
-        $this->info('Batch weather processing completed.');
-
-        return self::SUCCESS;
+    protected function logMessage(string $type, string $message): void
+    {
+        if ($this->output !== null) {
+            $this->{$type}($message);
+        } else {
+            Log::{$type}($message);
+        }
     }
 }

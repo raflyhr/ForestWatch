@@ -143,7 +143,8 @@ class BmkgService
             $response = Http::withHeaders([
                 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
             ])
-                ->timeout(15)
+                ->connectTimeout(5)
+                ->timeout(10)
                 ->retry(2, 500)
                 ->get($baseUrl.'/publik/prakiraan-cuaca', [
                     'adm4' => $code,

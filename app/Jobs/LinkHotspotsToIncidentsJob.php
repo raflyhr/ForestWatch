@@ -25,7 +25,7 @@ class LinkHotspotsToIncidentsJob implements ShouldQueue
             ->where('updated_at', '>=', $this->startTime)
             ->whereNull('incident_id')
             ->chunkById(1000, function ($hotspots) use ($engine) {
-                $engine->handleHotspots($hotspots);
+                $affectedIncidents = $engine->handleHotspots($hotspots);
             });
     }
 }
