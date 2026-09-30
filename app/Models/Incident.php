@@ -32,6 +32,13 @@ class Incident extends Model
         ];
     }
 
+    protected static function booted()
+    {
+        static::created(function ($incident) {
+            app(\App\Services\WarningEngine::class)->recalculate($incident);
+        });
+    }
+
     public function hotspots()
     {
         return $this->hasMany(Hotspot::class);
