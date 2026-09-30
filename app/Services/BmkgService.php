@@ -69,14 +69,14 @@ class BmkgService
         }
 
         // 4. OpenWeatherMap Fallback (TEMPORARILY DISABLED FOR BMKG ANALYSIS)
-        /*
+        
         if ($lat !== null && $lon !== null) {
             $data = $this->queryOpenWeatherApi($lat, $lon);
             if (!empty($data)) {
                 return $data;
             }
         }
-        */
+        
 
         $this->failed("BMKG primary and fallback attempts completed (OWM fallback skipped for analysis) for $areaCode.");
 
