@@ -4,6 +4,9 @@ use App\Http\Controllers\ProfileController;
 use App\Models\Incident;
 use App\Models\Report;
 use App\Models\User;
+use App\Http\Controllers\Api\HotspotController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\VerificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -31,14 +34,34 @@ Route::get('/dashboard', function () {
             'resolvedToday' => Incident::whereIn('status', ['closed', 'false_alarm'])->whereDate('updated_at', today())->count(),
             'isAdmin' => request()->user()->role === 'admin',
             'userName' => request()->user()->name,
+            'pendingReportItems' => Report::whereIn('status', ['submitted', 'under_review'])->latest()->take(5)->get(['id', 'report_type', 'description', 'created_at']),
         ],
         'incidents' => $incidents,
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::middleware(['auth', 'role:officer,admin'])->group(function () {
+    Route::post('/reports/{report}/moderate', [ReportController::class, 'moderate']);
+    Route::post('/incidents/{incident}/verify', [VerificationController::class, 'store']);
+});
+
+Route::middleware(['auth', 'role:admin'])->get('/admin/hotspots/{hotspot}/water-route', [HotspotController::class, 'waterRoute']);
+
 Route::get('/reports/create', fn () => Inertia::render('Reports/Create', ['stats' => [
     'pendingReports' => \App\Models\Report::whereIn('status', ['submitted', 'under_review'])->count(),
 ]]) )->name('reports.create');
+
+Route::middleware(['auth', 'role:officer,admin'])->group(function () {
+    Route::get('/reports', function () {
+        return Inertia::render('Reports/Index', [
+            'reports' => Report::with('incident')->latest()->paginate(25),
+        ]);
+    })->name('reports.index');
+
+    Route::get('/reports/{report}', function (Report $report) {
+        return Inertia::render('Reports/Show', ['report' => $report->load('incident')]);
+    })->name('reports.show');
+});
 
 Route::get('/incidents', function () {
     return Inertia::render('Incidents/Index', ['incidents' => Incident::latest()->get(), 'stats' => [
@@ -61,6 +84,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin', fn () => Inertia::render('Admin/Index', [
         'officerCount' => User::where('role', 'officer')->count(),
         'incidentCount' => Incident::count(),
+        'stats' => [
+            'activeIncidents' => Incident::whereNotIn('status', ['closed', 'false_alarm'])->count(),
+            'pendingReports' => Report::whereIn('status', ['submitted', 'under_review'])->count(),
+        ],
     ]))->name('admin.index');
 });
 
