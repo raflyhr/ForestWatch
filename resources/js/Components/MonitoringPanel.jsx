@@ -7,6 +7,7 @@ function MonitoringMap({ adminMode = false }) {
     const mapRef = useRef(null);
     const mapShellRef = useRef(null);
     const hotspotLayerRef = useRef(null);
+    const routeLayerRef = useRef(null);
     const [hotspotCount, setHotspotCount] = useState(0);
     const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -14,6 +15,7 @@ function MonitoringMap({ adminMode = false }) {
         const map = L.map(mapRef.current, { zoomControl: true, attributionControl: true }).setView([-2.25, 113.92], 6);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri' }).addTo(map);
         hotspotLayerRef.current = L.layerGroup().addTo(map);
+        routeLayerRef.current = L.layerGroup().addTo(map);
         const refreshHotspots = async () => {
             try {
                 const response = await fetch('/api/hotspots?per_page=100', { headers: { Accept: 'application/json' } });
@@ -21,6 +23,7 @@ function MonitoringMap({ adminMode = false }) {
                 const payload = await response.json();
                 const hotspots = payload.data ?? payload;
                 hotspotLayerRef.current.clearLayers();
+                routeLayerRef.current.clearLayers();
                 hotspots.filter(isValidHotspot).forEach((hotspot) => {
                     const marker = L.circleMarker([hotspot.latitude, hotspot.longitude], { radius: 7, color: '#ff5b2f', fillColor: '#ffd894', fillOpacity: 1, weight: 3 });
                     const loadRoute = async (button) => {
@@ -30,6 +33,9 @@ function MonitoringMap({ adminMode = false }) {
                             const response = await fetch(`/admin/hotspots/${encodeURIComponent(hotspot.id)}/water-route`, { headers: { Accept: 'application/json' } });
                             const data = await response.json();
                             if (!response.ok) throw new Error(data.message);
+                            if (data.route.geometry) {
+                                L.geoJSON(data.route.geometry, { style: { color: '#1687d9', weight: 5, opacity: 0.95, dashArray: '8 6' } }).addTo(routeLayerRef.current);
+                            }
                             marker.setPopupContent(createRoutePopup(data));
                         } catch (error) {
                             button.disabled = false;
