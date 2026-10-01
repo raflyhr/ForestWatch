@@ -52,14 +52,14 @@ export function createRoutePopup(data) {
     popup.className = 'hotspot-popup hotspot-route-popup';
     const distance = data.route.distance_m == null ? 'Tidak tersedia' : `${(data.route.distance_m / 1000).toFixed(1)} km`;
     const duration = data.route.duration_s == null ? 'Tidak tersedia' : `${Math.round(data.route.duration_s / 60)} menit`;
-    popup.innerHTML = '<div class="hotspot-popup-head"><span class="hotspot-popup-icon">💧</span><div><span class="hotspot-popup-kicker">ADMIN ROUTE</span><strong>Rute sumber air</strong></div></div><div class="hotspot-popup-primary"><span>SUMBER AIR TERDEKAT</span><b></b><small></small></div><div class="hotspot-popup-grid"><div><span>JARAK</span><b></b><small>estimasi perjalanan</small></div><div><span>WAKTU</span><b></b><small>via jalan darat</small></div><div><span>TIPE</span><b></b><small>identifikasi sumber</small></div><div><span>KOORDINAT</span><b></b><small>posisi sumber air</small></div></div>';
+    popup.innerHTML = '<div class="hotspot-popup-head"><span class="hotspot-popup-icon">💧</span><div><span class="hotspot-popup-kicker">ADMIN ROUTE</span><strong>Rute sumber air</strong></div><span class="hotspot-popup-badge">TERVERIFIKASI</span></div><div class="hotspot-popup-primary"><span>SUMBER AIR TERDEKAT</span><b></b><small></small></div><div class="hotspot-popup-grid"><div><span>JARAK</span><b></b><small>estimasi perjalanan</small></div><div><span>WAKTU</span><b></b><small>via jalan darat</small></div><div><span>TIPE</span><b></b><small>identifikasi sumber</small></div><div><span>DATA DARI</span><b></b><small>asal data sumber air</small></div></div>';
     const values = [
         [popup.querySelector('.hotspot-popup-primary b'), data.source.name],
         [popup.querySelector('.hotspot-popup-primary small'), `Tujuan: ${data.source.latitude}, ${data.source.longitude}`],
         [popup.querySelector('.hotspot-popup-grid div:nth-child(1) b'), distance],
         [popup.querySelector('.hotspot-popup-grid div:nth-child(2) b'), duration],
         [popup.querySelector('.hotspot-popup-grid div:nth-child(3) b'), data.source.type],
-        [popup.querySelector('.hotspot-popup-grid div:nth-child(4) b'), `${data.source.latitude}, ${data.source.longitude}`],
+        [popup.querySelector('.hotspot-popup-grid div:nth-child(4) b'), data.source.source ?? 'Tim kecamatan'],
     ];
     values.forEach(([element, value]) => { element.textContent = value ?? 'Tidak tersedia'; });
     return popup;

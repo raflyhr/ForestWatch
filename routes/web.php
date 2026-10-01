@@ -67,12 +67,12 @@ Route::get('/incidents', function () {
     return Inertia::render('Incidents/Index', ['incidents' => Incident::latest()->get(), 'stats' => [
         'activeIncidents' => Incident::whereNotIn('status', ['closed', 'false_alarm'])->count(),
         'pendingReports' => \App\Models\Report::whereIn('status', ['submitted', 'under_review'])->count(),
-    ]]);
-})->name('incidents.index');
+    ], 'adminMode' => request()->user()?->role === 'admin']);
+})->middleware(['auth', 'role:officer,admin'])->name('incidents.index');
 
 Route::get('/incidents/{incident}', function (Incident $incident) {
     return Inertia::render('Incidents/Show', ['incident' => $incident->load(['hotspots', 'reports', 'warnings'])]);
-})->name('incidents.show');
+})->middleware(['auth', 'role:officer,admin'])->name('incidents.show');
 
 Route::middleware(['auth', 'role:officer'])->group(function () {
     Route::get('/officer/incidents', fn () => Inertia::render('Officer/Index', [
