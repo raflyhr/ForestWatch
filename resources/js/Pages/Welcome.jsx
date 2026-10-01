@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { createHotspotPopup, isValidHotspot } from '@/hotspots';
 
 const features = [
     ['01', 'Detect', 'Global FIRMS thermal bands flag infrared anomalies in real time.'],
@@ -18,8 +19,12 @@ const intelligence = [
 ];
 
 function MapPanel({ large = false }) {
+    const mapShellRef = useRef(null);
+    const toggleFullscreen = () => document.fullscreenElement ? document.exitFullscreen() : mapShellRef.current?.requestFullscreen();
+
     return (
-        <div className={`leaflet-map-wrap ${large ? 'leaflet-map-large' : 'leaflet-map-hero'}`}>
+        <div ref={mapShellRef} className={`leaflet-map-wrap ${large ? 'leaflet-map-large' : 'leaflet-map-hero'}`}>
+            <button className="map-fullscreen-button" type="button" onClick={toggleFullscreen} aria-label="Buka peta layar penuh">⛶ Layar penuh</button>
             <LeafletMap />
         </div>
     );
@@ -27,6 +32,7 @@ function MapPanel({ large = false }) {
 
 function LeafletMap() {
     const mapRef = useRef(null);
+    const hotspotLayerRef = useRef(null);
 
     useEffect(() => {
         const map = L.map(mapRef.current, { zoomControl: false, attributionControl: true }).setView([-2.25, 113.92], 6);
@@ -35,8 +41,11 @@ function LeafletMap() {
         }).addTo(map);
         const standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' });
         const terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenTopoMap contributors' });
-        L.polygon([[-1.2, 112.8], [-1.45, 115.4], [-3.2, 115.1], [-3.4, 112.7]], { color: '#46d5db', weight: 2, fillColor: '#0d6a60', fillOpacity: 0.16 }).addTo(map);
-        [[-2.05, 113.95], [-1.8, 114.35], [-2.5, 113.55]].forEach((point) => L.circleMarker(point, { radius: 8, color: '#ff5b2f', fillColor: '#ffd894', fillOpacity: 1, weight: 3 }).addTo(map));
+        hotspotLayerRef.current = L.layerGroup().addTo(map);
+        fetch('/api/hotspots?per_page=100', { headers: { Accept: 'application/json' } })
+            .then((response) => response.ok ? response.json() : Promise.reject())
+            .then((payload) => (payload.data ?? payload).filter(isValidHotspot).forEach((hotspot) => L.circleMarker([hotspot.latitude, hotspot.longitude], { radius: 8, color: '#ff5b2f', fillColor: '#ffd894', fillOpacity: 1, weight: 3 }).bindPopup(createHotspotPopup(hotspot)).addTo(hotspotLayerRef.current)))
+            .catch(() => {});
         const resizeObserver = new ResizeObserver(() => map.invalidateSize());
         resizeObserver.observe(mapRef.current);
         window.setTimeout(() => map.invalidateSize(), 100);

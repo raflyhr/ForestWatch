@@ -28,6 +28,8 @@ Route::middleware(['auth:sanctum', 'role:officer,admin'])->group(function () {
     Route::patch('/responses/{response}', [ResponseController::class, 'update']);
 });
 
+Route::middleware(['auth:sanctum', 'role:admin'])->get('/admin/hotspots/{hotspot}/water-route', [HotspotController::class, 'waterRoute']);
+
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/summary', [AdminController::class, 'summary']);
     Route::get('/officers', [AdminController::class, 'officers']);
