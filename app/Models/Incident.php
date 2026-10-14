@@ -54,6 +54,11 @@ class Incident extends Model
         return $this->hasMany(WeatherSnapshot::class);
     }
 
+    public function latestWeatherSnapshot()
+    {
+        return $this->hasOne(WeatherSnapshot::class)->latestOfMany();
+    }
+
     public function warnings()
     {
         return $this->hasMany(Warning::class);

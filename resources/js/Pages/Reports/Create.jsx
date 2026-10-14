@@ -1,6 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function Create({ stats }) {
     const [data, setData] = useState({ report_type: 'fire', latitude: '', longitude: '', phone_number: '', description: '', photo: null });
@@ -65,7 +64,8 @@ export default function Create({ stats }) {
         ? `https://www.openstreetmap.org/export/embed.html?bbox=${Number(data.longitude) - 0.01}%2C${Number(data.latitude) - 0.01}%2C${Number(data.longitude) + 0.01}%2C${Number(data.latitude) + 0.01}&layer=mapnik&marker=${data.latitude}%2C${data.longitude}`
         : null;
 
-    return <AuthenticatedLayout header={<span>Laporan Warga</span>}><Head title="Laporan Warga" /><div className="report-page">
+    return <><Head title="Laporan Warga" /><div className="report-page">
+        <nav className="public-report-nav"><Link href="/" className="public-report-logo"><img src="/logo%20watermark%202%20(1).png" alt="ForestWatch" /></Link><Link href="/" className="public-report-back">← Kembali ke beranda</Link></nav>
         <section className="report-hero"><div className="report-hero-content"><Link href="/" className="report-brand">🌲 <span>ForestWatch<small>WILDFIRE MONITORING</small></span></Link><p className="report-eyebrow">COMMUNITY RESPONSE</p><h1>Laporkan Karhutla</h1><p>Bantu kami mendeteksi kebakaran lebih cepat dengan melaporkan kejadian yang Anda temukan.</p><a className="report-incident-button" href="#report-form">Report Incident <b>→</b></a></div></section>
         <main id="report-form" className="report-form-wrap">
             {result && <div className="report-success">Laporan #{result.report_id} berhasil dikirim. Tim ForestWatch akan segera menindaklanjuti.</div>}
@@ -80,5 +80,5 @@ export default function Create({ stats }) {
                 <button disabled={processing} className="report-submit">{processing ? 'Mengirim Laporan...' : '🚨 Kirim Laporan'}</button>
             </form>
         </main>
-    </div></AuthenticatedLayout>;
+    </div></>;
 }
