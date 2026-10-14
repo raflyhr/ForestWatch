@@ -10,6 +10,6 @@ class Hotspot extends Model
 
     public function incident()
     {
-        return $this->belongsTo(Incident::class);
+        return $this->belongsTo(Incident::class)->with('latestWeatherSnapshot');
     }
 }

@@ -60,6 +60,7 @@ function LeafletMap() {
 
 export default function Welcome() {
     const [isScrolled, setIsScrolled] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 24);
@@ -72,11 +73,11 @@ export default function Welcome() {
         <>
             <Head title="ForestWatch" />
             <div className="forestwatch">
-                <nav className={`nav-shell ${isScrolled ? 'nav-scrolled' : ''}`}>
+                <nav className={`nav-shell ${isScrolled ? 'nav-scrolled' : ''} ${menuOpen ? 'nav-open' : ''}`}>
                     <a className="brand" href="#top"><img src="/logo%20watermark%202%20(1).png" alt="ForestWatch" /></a>
-                    <div className="nav-links"><a href="#works">Alur</a><a href="#intelligence">Berita</a><a href="#monitoring">Live Map</a><a href="#contact">Pelaporan</a></div>
+                    <div className="nav-links"><a href="#works" onClick={() => setMenuOpen(false)}>Alur</a><a href="#intelligence" onClick={() => setMenuOpen(false)}>Berita</a><a href="#monitoring" onClick={() => setMenuOpen(false)}>Live Map</a><a href="/reports/create" onClick={() => setMenuOpen(false)}>Pelaporan</a></div>
                     <a className="login-button" href="/login">Masuk</a>
-                    <button className="menu-button" type="button" aria-label="Buka menu">☰</button>
+                    <button className="menu-button" type="button" aria-expanded={menuOpen} aria-label={menuOpen ? 'Tutup menu' : 'Buka menu'} onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? '×' : '☰'}</button>
                 </nav>
 
                 <header id="top" className="hero section-wrap">
