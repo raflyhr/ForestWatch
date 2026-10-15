@@ -5,17 +5,17 @@ import 'leaflet/dist/leaflet.css';
 import { createHotspotPopup, isValidHotspot } from '@/hotspots';
 
 const features = [
-    ['01', 'Detect', 'Global FIRMS thermal bands flag infrared anomalies in real time.'],
-    ['02', 'Warn', 'Automated routing instantly alerts ground response teams.'],
-    ['03', 'Verify', 'Localer data needs & community reports confirm hotspots.'],
-    ['04', 'Respond', 'Targeted coordinates dispatch directly to emergency response.'],
+    ['01', 'Akses Wilayah', 'Membantu memahami akses jalan menuju area kejadian berdasarkan data peta yang tersedia.'],
+    ['02', 'Sumber Air', 'Menemukan dan meninjau sumber air yang terpetakan seperti sungai, danau, atau rawa di sekitar lokasi.'],
+    ['03', 'Persiapan Respons', 'Memberikan gambaran awal bagi petugas untuk mempertimbangkan logistik sebelum bergerak ke lapangan.'],
+    ['04', 'Laporan Masyarakat', 'Integrasi laporan warga untuk mempercepat verifikasi indikasi titik api secara kolektif.'],
 ];
 
 const intelligence = [
-    ['◉', 'NASA FIRMS Integration', 'Direct orbital API download, harvests thermal anomaly pixel arrays from MODIS and VIIRS satellite instruments.'],
-    ['◌', 'Weather Intelligence', 'Correlates predictive meteorological data: instant tracking of dry winds, lightning density, and humidity metrics.'],
-    ['♧', 'Crowdsourced Reports', 'On-the-ground verification with citizen networks. Instantly gets high-accuracy reports with media attach features.'],
-    ['◎', 'AI Evidence Analysis', 'Machine vision scanning models refine false positives by running multi-spectral image checks against fire databases.'],
+    ['◉', 'Integrasi NASA FIRMS', 'Akses data hotspot satelit MODIS dan VIIRS untuk mendeteksi anomali panas di wilayah hutan.'],
+    ['◌', 'Informasi Cuaca', 'Pantau parameter cuaca BMKG seperti suhu dan kelembaban yang memengaruhi risiko kebakaran.'],
+    ['♧', 'Laporan Indikasi', 'Verifikasi berbasis masyarakat dengan fitur unggah temuan indikasi kebakaran langsung dari lokasi.'],
+    ['◎', 'Konteks Lokasi', 'Menyediakan data pendukung akses dan sumber air terdekat untuk membantu persiapan strategi respons.'],
 ];
 
 function MapPanel({ large = false }) {
@@ -74,7 +74,7 @@ export default function Welcome() {
             <div className="forestwatch">
                 <nav className={`nav-shell ${isScrolled ? 'nav-scrolled' : ''}`}>
                     <a className="brand" href="#top"><img src="/logo%20watermark%202%20(1).png" alt="ForestWatch" /></a>
-                    <div className="nav-links"><a href="#works">Alur</a><a href="#intelligence">Berita</a><a href="#monitoring">Live Map</a><a href="#contact">Pelaporan</a></div>
+                    <div className="nav-links"><a href="#works">Alur</a><a href="#intelligence">Informasi</a><a href="#monitoring">Peta Pemantauan</a><a href="#contact">Filosofi</a></div>
                     <a className="login-button" href="/login">Masuk</a>
                     <button className="menu-button" type="button" aria-label="Buka menu">☰</button>
                 </nav>
@@ -84,10 +84,10 @@ export default function Welcome() {
                     <img className="hero-corner hero-corner-tr" src="/deco-leaf-tr.png" alt="" aria-hidden="true" />
                     <img className="hero-corner hero-corner-bl" src="/deco-leaf-tr.png" alt="" aria-hidden="true" />
                     <img className="hero-corner hero-corner-br" src="/deco-leaf-tr.png" alt="" aria-hidden="true" />
-                    <div className="eyebrow">REAL-TIME ENVIRONMENTAL SECURITY</div>
-                    <h1>Protect Forests<br />Before It's Too Late</h1>
-                    <p className="hero-copy">Deploying autonomous, real-time wildfire intelligence. ForestWatch combines satellite thermal data, multispectral weather metrics, and crowdsourced reporting to stop outbreaks in minutes.</p>
-                    <div className="button-row"><a className="button button-orange" href="#monitoring">View Live Map <b>→</b></a><a className="button button-ghost" href="/reports/create">Report Incident </a></div>
+                    <div className="eyebrow">FORESTWATCH · PEMANTAUAN DINI & DUKUNGAN RESPONS KARHUTLA</div>
+                    <h1>Deteksi Lebih Awal.<br />Respons Lebih Terarah.</h1>
+                    <p className="hero-copy">ForestWatch mengintegrasikan data hotspot satelit, informasi cuaca, dan laporan masyarakat untuk membantu pemantauan kebakaran hutan dan lahan. Informasi akses wilayah dan sumber air turut memberikan konteks bagi petugas dalam mempersiapkan penanganan di lapangan.</p>
+                    <div className="button-row"><a className="button button-orange" href="#monitoring">Lihat Peta Pemantauan <b>→</b></a><a className="button button-ghost" href="/reports/create">Laporkan Indikasi Kebakaran</a></div>
                 </header>
 
                 <div className="hero-workflow-divider" aria-hidden="true" />
@@ -95,19 +95,36 @@ export default function Welcome() {
                 <section id="works" className="works section-wrap">
                     <img className="workflow-bird workflow-bird-left" src="/hornbill-accent.png" alt="" aria-hidden="true" />
                     <img className="workflow-bird workflow-bird-right" src="/hornbill-accent.png" alt="" aria-hidden="true" />
-                    <div className="eyebrow">TACTICAL WORKFLOW</div><h2>How ForestWatch Works</h2><p className="section-copy">Closing the critical gap between initial outbreak and response agency deployment.</p>
-                    <div className="feature-grid">{features.map(([num, title, copy]) => <article className="feature-card" key={title}><div className="feature-icon">{title === 'Detect' ? '◉' : title === 'Warn' ? '✹' : title === 'Verify' ? '✓' : '▣'}</div><small>{num}</small><h3>{title}</h3><p>{copy}</p></article>)}</div>
+                    <div className="eyebrow">TACTICAL WORKFLOW</div><h2>Dari Titik Hotspot ke Gambaran Respons Lapangan</h2><p className="section-copy">Mengetahui lokasi indikasi kebakaran saja belum cukup untuk mempersiapkan penanganan. ForestWatch membantu menampilkan konteks akses wilayah dan sumber air di sekitar lokasi.</p>
+                    <div className="feature-grid">{features.map(([num, title, copy]) => <article className="feature-card" key={title}><div className="feature-icon">{title === 'Akses Wilayah' ? '◉' : title === 'Sumber Air' ? '✹' : title === 'Persiapan Respons' ? '✓' : '▣'}</div><small>{num}</small><h3>{title}</h3><p>{copy}</p></article>)}</div>
                 </section>
 
-                <section id="intelligence" className="intelligence section-wrap"><div className="eyebrow">MULTI-SOURCE DATA ENGINE</div><div className="split-heading"><h2>Continuous Ecological<br />Intelligence</h2><p>We integrate space observation, terrestrial weather systems, and boots-on-the-ground community alerts into one continuous intelligence stream.</p></div><div className="intelligence-grid">{intelligence.map(([icon, title, copy], index) => <article className={`intel-card ${index % 3 === 1 || index === 2 ? 'dark-card' : ''}`} key={title}><div className="intel-icon">{icon}</div><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div></section>
+                <section id="intelligence" className="intelligence section-wrap"><div className="eyebrow">MULTI-SOURCE DATA ENGINE</div><div className="split-heading"><h2>Dukungan Informasi<br />Kesiapsiagaan</h2><p>Kami menyatukan pengamatan satelit, parameter cuaca terestrial, dan laporan warga ke dalam satu sistem informasi untuk mendukung persiapan respons di lapangan.</p></div><div className="intelligence-grid">{intelligence.map(([icon, title, copy], index) => <article className={`intel-card ${index % 3 === 1 || index === 2 ? 'dark-card' : ''}`} key={title}><div className="intel-icon">{icon}</div><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div></section>
 
-                 <section id="monitoring" className="monitoring section-wrap"><img className="monitoring-leaf monitoring-leaf-left" src="/deco-leaf-tr.png" alt="" aria-hidden="true" /><img className="monitoring-leaf monitoring-leaf-right" src="/deco-leaf-tr.png" alt="" aria-hidden="true" /><div className="eyebrow">OPERATIONS CONTROL</div><h2>Live Monitoring Interface</h2><p className="section-copy">A high-fidelity snapshot of active global monitoring, operational tracking, and thermal<br className="monitoring-break" /> hotspot detection indices.</p><div className="monitoring-dashboard"><aside className="outbreaks"><h3>Active Outbreaks</h3><p>Sorted by priority indices</p><div className="outbreak-card"><b>Kalimantan Block C</b><span className="critical">● Critical Outbreak</span></div><div className="outbreak-card"><b>Sierra Nevada Foothills</b><span className="verified">● Verified Threat</span></div><div className="outbreak-card"><b>Queensland Zone 4</b><span className="extinguished">● Extinguished</span></div></aside><MapPanel large /></div></section>
+                 <section id="monitoring" className="monitoring section-wrap"><img className="monitoring-leaf monitoring-leaf-left" src="/deco-leaf-tr.png" alt="" aria-hidden="true" /><img className="monitoring-leaf monitoring-leaf-right" src="/deco-leaf-tr.png" alt="" aria-hidden="true" /><div className="eyebrow">OPERATIONS CONTROL</div><h2>Peta Pemantauan Aktif</h2><p className="section-copy">Snapshot real-time untuk pemantauan hotspot aktif dan tracking operasional di wilayah kerja.</p><div className="monitoring-dashboard"><aside className="outbreaks"><h3>Indikasi Hotspot</h3><p>Berdasarkan skala prioritas</p><div className="outbreak-card"><b>Kalimantan Blok C</b><span className="critical">● Indikasi Kritis</span></div><div className="outbreak-card"><b>Lereng Sierra Nevada</b><span className="verified">● Terverifikasi</span></div><div className="outbreak-card"><b>Zona Queensland 4</b><span className="extinguished">● Padam</span></div></aside><MapPanel large /></div></section>
 
-                  <section id="impact" className="reach section-wrap"><img className="reach-deco reach-deco-left" src="/deco-leaf-tr.png" alt="" aria-hidden="true" /><img className="reach-deco reach-deco-right" src="/circle-x.png" alt="" aria-hidden="true" /><div className="eyebrow">PLATFORM FOOTPRINT</div><h2>Empirical Protective Reach</h2><p className="section-copy">Deploying technology directly at the interface of preservation, early detection, and rapid<br className="reach-break" /> action.</p><div className="stats">{[['12,847', 'Outbreaks Detected'], ['8,392', 'Verified Events'], ['156', 'Protected Reserve Hubs'], ['<3 min', 'Avg. Transmission']].map(([value, label], i) => <div className={`stat stat-${i}`} key={label}><strong>{value}</strong><span>{label}</span></div>)}</div></section>
+                   <section id="impact" className="reach section-wrap"><img className="reach-deco reach-deco-left" src="/deco-leaf-tr.png" alt="" aria-hidden="true" /><img className="reach-deco reach-deco-right" src="/circle-x.png" alt="" aria-hidden="true" /><div className="eyebrow">PLATFORM FOOTPRINT</div><h2>Jangkauan Dukungan Informasi</h2><p className="section-copy">Menyediakan teknologi tepat guna untuk mendukung preservasi, deteksi dini, dan persiapan respons cepat.</p><div className="stats">{[['12,847', 'Hotspot Terdeteksi'], ['8,392', 'Laporan Terverifikasi'], ['156', 'Hub Konservasi'], ['<3 mnt', 'Transmisi Data']].map(([value, label], i) => <div className={`stat stat-${i}`} key={label}><strong>{value}</strong><span>{label}</span></div>)}</div></section>
 
-                 <section id="contact" className="closing section-wrap"><div className="partners">SATELLITE LABS　 METEOROLOGY ALLIANCE　 EARTH FIRST　 INDONESIA CONSERVATION　 ECOTRUST</div><blockquote>“Before implementing ForestWatch, tracking wildfires across our reserves relied entirely on visible ash and local report lag. The MODIS integration flags thermal events before columns break the forest canopy.”<cite>Dr. Rahma Santoso<br /><small>Lead Warden, Kalimantan Conservation Project</small></cite></blockquote><div className="cta"><h2>Join the Fight Against<br />Wildfires</h2><p>Get instant access to live telemetry monitoring, autonomous drone dispatch hooks, and<br className="cta-break" /> priority incident reports.</p><div className="cta-form"><a className="button button-orange" href="/reports/create">Report Incident <b>→</b></a></div></div></section>
+                 <section id="contact" className="closing section-wrap">
+                    <div className="partners">PEMANTAUAN MANDIRI　 DATA TERINTEGRASI　 KESIAPSIAGAAN DINI</div>
+                    <div className="eyebrow" style={{textAlign: 'center', width: '100%', marginBottom: '1rem'}}>WHY FORESTWATCH EXISTS</div>
+                    <blockquote style={{maxWidth: '800px', margin: '42px auto'}}>
+                        “Jangan Menunggu Dampaknya Terlihat untuk Mulai Bertindak. Dampak bencana sering kali menjadi hal yang paling terlihat, sementara tanda-tanda awal dan informasi yang dibutuhkan untuk bersiap dapat luput dari perhatian. ForestWatch berangkat dari keyakinan bahwa kesiapsiagaan perlu dimulai sebelum keadaan memburuk.”
+                        <cite>ForestWatch Philosophy<br /><small>Kesiapsiagaan dimulai dari informasi yang tepat.</small></cite>
+                    </blockquote>
 
-                 <footer><div className="footer-brand"><a className="brand" href="#top"><img src="/logo%20watermark%202%20(1).png" alt="ForestWatch" /></a><p>Deploying global observation technology to secure<br />ecological reserves, protect natural infrastructure, and<br />secure early action against wildfire.</p></div><div className="footer-links"><div><b>Product</b><a href="#monitoring">Live Map</a><a href="#intelligence">FIRMS Sync</a><a href="#works">Demo Reports</a><a href="#contact">Pricing</a></div><div><b>Resources</b><a href="#contact">API Reference</a><a href="#contact">Incident Schema</a><a href="#contact">Case Studies</a><a href="#contact">Status</a></div><div><b>Company</b><a href="#contact">About</a><a href="#contact">Ecology Alliance</a><a href="#contact">Investor Room</a><a href="#contact">Contact</a></div></div><div className="copyright">© 2025 ForestWatch Inc. All species rights reserved under NASA information FIRMS protocols.</div></footer>
+                    <div className="cta-card" style={{maxWidth: '800px', margin: '0 auto 60px', padding: '48px 40px', borderRadius: '24px', background: 'linear-gradient(110deg, #ff6b39 0%, #a66d45 33%, #09533c 100%)', boxShadow: '0 18px 34px #001b1355', textAlign: 'center'}}>
+                        <h2 style={{margin: '0 0 16px', fontSize: 'clamp(28px, 3.5vw, 44px)', lineHeight: '1.1', color: '#fff'}}>Mulai dari Informasi yang Tepat</h2>
+                        <p style={{margin: '0 auto 28px', maxWidth: '560px', color: '#e1e8df', fontSize: '16px', lineHeight: '1.65'}}>
+                            Pantau indikasi karhutla, pahami konteks lokasi, dan sampaikan laporan untuk membantu proses verifikasi. ForestWatch menyatukan informasi awal yang dapat mendukung kesiapsiagaan.
+                        </p>
+                        <div className="cta-form" style={{justifyContent: 'center'}}>
+                            <a className="button button-orange" href="#monitoring" style={{fontSize: '14px', padding: '15px 28px', borderRadius: '13px'}}>Buka Peta Pemantauan <b>→</b></a>
+                        </div>
+                    </div>
+                </section>
+
+                                   <footer style={{marginTop: '0', paddingTop: '40px'}}><div className="footer-brand"><a className="brand" href="#top"><img src="/logo%20watermark%202%20(1).png" alt="ForestWatch" /></a><p>ForestWatch membantu pemantauan indikasi karhutla melalui integrasi data satelit, informasi cuaca, laporan masyarakat, serta konteks akses dan sumber air untuk mendukung persiapan respons.</p></div><div className="footer-links"><div><b>Pemantauan</b><a href="#monitoring">Peta Pemantauan</a><a href="#works">Alur Kerja</a><a href="/reports/create">Pelaporan</a></div><div><b>Informasi</b><a href="#intelligence">Sumber Data</a><a href="#contact">Tentang ForestWatch</a></div><div><b>Akun</b><a href="/login">Masuk</a></div></div><div className="copyright">© 2026 ForestWatch Project. Data satelit bersumber dari NASA FIRMS.</div></footer>
             </div>
         </>
     );
