@@ -15,20 +15,38 @@ class HotspotController extends Controller
     {
         $perPage = min(max((int) $request->query('per_page', 25), 1), 100);
 
-        return Hotspot::latest('detected_at')->paginate($perPage);
+        return Hotspot::with('incident')->latest('detected_at')->paginate($perPage);
     }
 
     public function waterRoute(Hotspot $hotspot, ForestWatchApiService $waterApi, RoutingService $routing)
     {
         $hotspotLatitude = (float) $hotspot->latitude;
         $hotspotLongitude = (float) $hotspot->longitude;
-        $sources = WaterSource::query()->where('is_verified', true)->get()->map(function (WaterSource $source) use ($hotspotLatitude, $hotspotLongitude) {
+        $incident = $hotspot->incident;
+        $landClassification = $incident?->land_classification;
+        $sources = collect($incident?->water_sources ?? [])->filter(function ($source) {
+            return is_numeric($source['latitude'] ?? $source['lat'] ?? null)
+                && is_numeric($source['longitude'] ?? $source['lng'] ?? $source['lon'] ?? null);
+        })->map(function ($source) use ($hotspotLatitude, $hotspotLongitude) {
+            $source['latitude'] = (float) ($source['latitude'] ?? $source['lat']);
+            $source['longitude'] = (float) ($source['longitude'] ?? $source['lng'] ?? $source['lon']);
+            $latDelta = deg2rad($source['latitude'] - $hotspotLatitude);
+            $lngDelta = deg2rad($source['longitude'] - $hotspotLongitude);
+            $a = sin($latDelta / 2) ** 2 + cos(deg2rad($hotspotLatitude)) * cos(deg2rad($source['latitude'])) * sin($lngDelta / 2) ** 2;
+            $source['distance_m'] = 6371000 * 2 * asin(min(1, sqrt($a)));
+            $source['source'] = $source['source'] ?? 'Laporan insiden';
+            return $source;
+        })->sortBy('distance_m')->values();
+
+        if ($sources->isEmpty()) {
+            $sources = WaterSource::query()->where('is_verified', true)->get()->map(function (WaterSource $source) use ($hotspotLatitude, $hotspotLongitude) {
             $latDelta = deg2rad((float) $source->latitude - $hotspotLatitude);
             $lngDelta = deg2rad((float) $source->longitude - $hotspotLongitude);
             $a = sin($latDelta / 2) ** 2 + cos(deg2rad($hotspotLatitude)) * cos(deg2rad((float) $source->latitude)) * sin($lngDelta / 2) ** 2;
             $source->distance_m = 6371000 * 2 * asin(min(1, sqrt($a)));
             return $source;
-        })->sortBy('distance_m')->values();
+            })->sortBy('distance_m')->values();
+        }
 
         if ($sources->isEmpty()) {
             $data = $waterApi->findWaterSources($hotspotLatitude, $hotspotLongitude);
@@ -63,6 +81,7 @@ class HotspotController extends Controller
                 'latitude' => $latitude,
                 'longitude' => $longitude,
             ],
+            'land_classification' => $landClassification,
             'route' => [
                 'distance_m' => $routeData['distance'] ?? null,
                 'duration_s' => $routeData['duration'] ?? null,
